@@ -1,0 +1,2086 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Score Report — {{ tenant_name }}</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Lato:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+    :root {
+      --hero-bg: #1b4d62;
+      --cta: #3abfcf;
+      --cta-hover: #2ea8b8;
+      --brand-pink: #e4007c;
+      --white: #ffffff;
+      --light-grey: #f2f4f5;
+      --border: #e5e7eb;
+      --text-primary: #2d2d2d;
+      --text-muted: #6b7280;
+      --text-on-dark: #ffffff;
+
+      --pass-bg: #dcfce7;
+      --pass-text: #15803d;
+      --pass-border: #86efac;
+      --fail-bg: #fee2e2;
+      --fail-text: #dc2626;
+      --fail-border: #fca5a5;
+      --skip-bg: #f3f4f6;
+      --skip-text: #6b7280;
+      --skip-border: #d1d5db;
+
+      --sev-critical-bg: #7f1d1d;
+      --sev-critical-text: #ffffff;
+      --sev-high-bg: #f97316;
+      --sev-high-text: #ffffff;
+      --sev-medium-bg: #f59e0b;
+      --sev-medium-text: #1a1a1a;
+      --sev-low-bg: #3b82f6;
+      --sev-low-text: #ffffff;
+      --sev-info-bg: #e5e7eb;
+      --sev-info-text: #374151;
+
+      --band-ready: #22c55e;
+      --band-near-ready: #f59e0b;
+      --band-significant: #ef4444;
+      --band-not-ready: #7f1d1d;
+
+      --lic-yes-bg: #dcfce7;
+      --lic-yes-text: #15803d;
+      --lic-no-bg: #f3f4f6;
+      --lic-no-text: #6b7280;
+
+      --font-heading: "Poppins", Arial, sans-serif;
+      --font-body: "Lato", Arial, sans-serif;
+      --font-mono: "JetBrains Mono", Consolas, monospace;
+
+      --page-w: 210mm;
+      --page-h: 297mm;
+      --gutter: 14mm;
+    }
+
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html,
+    body {
+      font-family: var(--font-body);
+      color: var(--text-primary);
+      background: var(--white);
+      font-size: 10pt;
+      line-height: 1.55;
+    }
+
+    .page {
+      width: var(--page-w);
+      min-height: var(--page-h);
+      position: relative;
+      overflow: hidden;
+      background: var(--white);
+      page-break-before: always;
+      page-break-inside: avoid;
+    }
+
+    .page:first-child {
+      page-break-before: auto;
+    }
+
+    .cover {
+      background: var(--hero-bg);
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: var(--page-h);
+      color: var(--text-on-dark);
+      padding: 0;
+    }
+
+    .cover-header {
+      padding: 12mm var(--gutter) 8mm;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cover-logo-wordmark {
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+    }
+
+    .cover-logo-intuity {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 20pt;
+      color: var(--brand-pink);
+      letter-spacing: -0.5px;
+    }
+
+    .cover-logo-tech {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 8pt;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-left: 4px;
+      align-self: center;
+    }
+
+    .cover-confidential-badge {
+      font-family: var(--font-body);
+      font-size: 7pt;
+      color: rgba(255, 255, 255, 0.5);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 3px 8px;
+      border-radius: 3px;
+    }
+
+    .cover-stripe {
+      height: 3px;
+      background: linear-gradient(90deg, var(--cta) 0%, var(--brand-pink) 100%);
+      width: 100%;
+    }
+
+    .cover-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 var(--gutter);
+    }
+
+    .cover-eyebrow {
+      font-family: var(--font-body);
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--cta);
+      margin-bottom: 6mm;
+    }
+
+    .cover-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 30pt;
+      line-height: 1.15;
+      color: var(--white);
+      margin-bottom: 3mm;
+    }
+
+    .cover-subtitle {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 16pt;
+      color: var(--cta);
+      margin-bottom: 10mm;
+    }
+
+    .cover-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2mm;
+      margin-bottom: 12mm;
+    }
+
+    .cover-meta-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .cover-meta-label {
+      font-family: var(--font-body);
+      font-size: 8pt;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      width: 30mm;
+      flex-shrink: 0;
+    }
+
+    .cover-meta-value {
+      font-family: var(--font-body);
+      font-size: 10pt;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+    }
+
+    .cover-score-area {
+      display: flex;
+      align-items: center;
+      gap: 10mm;
+      margin-top: 4mm;
+    }
+
+    .score-gauge {
+      position: relative;
+      width: 44mm;
+      height: 44mm;
+      flex-shrink: 0;
+    }
+
+    .score-gauge svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .score-gauge-track {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.1);
+      stroke-width: 8;
+    }
+
+    .score-gauge-fill {
+      fill: none;
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.6s ease;
+    }
+
+    .score-gauge-inner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .score-number {
+      font-family: var(--font-heading);
+      font-size: 20pt;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1;
+    }
+
+    .score-denom {
+      font-family: var(--font-body);
+      font-size: 7pt;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .score-band-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2mm;
+    }
+
+    .score-band-label {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 14pt;
+    }
+
+    .score-band-desc {
+      font-family: var(--font-body);
+      font-size: 9pt;
+      color: rgba(255, 255, 255, 0.65);
+      max-width: 80mm;
+      line-height: 1.45;
+    }
+
+    .band-ready { color: #22c55e; }
+    .band-near_ready { color: #f59e0b; }
+    .band-significant_gaps { color: #ef4444; }
+    .band-not_ready { color: #fca5a5; }
+    .band-critical_risk { color: #fca5a5; }
+    .band-cyber_resilient { color: #22c55e; }
+
+    .cover-footer {
+      padding: 6mm var(--gutter);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cover-footer-left {
+      font-family: var(--font-body);
+      font-size: 7.5pt;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .cover-footer-right {
+      font-family: var(--font-mono);
+      font-size: 7pt;
+      color: rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.5px;
+    }
+
+    .cover-footer-center {
+      font-family: var(--font-mono);
+      font-size: 7pt;
+      color: rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.5px;
+    }
+
+    .page-inner {
+      padding: 0 var(--gutter) 10mm;
+    }
+
+    .page-header-bar {
+      background: var(--hero-bg);
+      padding: 5mm var(--gutter) 4mm;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8mm;
+    }
+
+    .page-header-bar h1 {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 13pt;
+      color: var(--white);
+      line-height: 1.2;
+    }
+
+    .page-header-bar .page-header-right {
+      text-align: right;
+    }
+
+    .page-header-tenant {
+      font-family: var(--font-body);
+      font-size: 8pt;
+      color: rgba(255, 255, 255, 0.7);
+      display: block;
+    }
+
+    .page-header-date {
+      font-family: var(--font-mono);
+      font-size: 7.5pt;
+      color: var(--cta);
+      display: block;
+    }
+
+    .page-footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 3mm var(--gutter);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--white);
+    }
+
+    .page-footer-left {
+      font-family: var(--font-body);
+      font-size: 7pt;
+      color: var(--text-muted);
+    }
+
+    .page-footer-right {
+      font-family: var(--font-mono);
+      font-size: 7pt;
+      color: var(--text-muted);
+    }
+
+    .exec-summary-body {
+      padding-bottom: 14mm;
+    }
+
+    .exec-summary-text {
+      font-family: var(--font-body);
+      font-size: 10pt;
+      line-height: 1.65;
+      color: var(--text-primary);
+      margin-bottom: 6mm;
+    }
+
+    .exec-summary-text p+p {
+      margin-top: 3.5mm;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4mm;
+      margin: 6mm 0;
+    }
+
+    .kpi-tile {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 5mm 6mm;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5mm;
+    }
+
+    .kpi-tile-label {
+      font-family: var(--font-body);
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .kpi-tile-value {
+      font-family: var(--font-heading);
+      font-size: 20pt;
+      font-weight: 700;
+      color: var(--hero-bg);
+      line-height: 1;
+    }
+
+    .kpi-tile-sub {
+      font-family: var(--font-body);
+      font-size: 8pt;
+      color: var(--text-muted);
+    }
+
+    .kpi-tile.kpi-warning .kpi-tile-value { color: #f59e0b; }
+    .kpi-tile.kpi-danger .kpi-tile-value  { color: #dc2626; }
+    .kpi-tile.kpi-good .kpi-tile-value    { color: #15803d; }
+
+    .band-callout {
+      background: var(--light-grey);
+      border-left: 4px solid var(--cta);
+      border-radius: 0 4px 4px 0;
+      padding: 4mm 5mm;
+      margin-top: 5mm;
+    }
+
+    .band-callout-title {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 9pt;
+      color: var(--hero-bg);
+      margin-bottom: 1.5mm;
+    }
+
+    .band-callout-text {
+      font-family: var(--font-body);
+      font-size: 8.5pt;
+      color: var(--text-primary);
+      line-height: 1.55;
+    }
+
+    .section-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 12pt;
+      color: var(--hero-bg);
+      margin-bottom: 4mm;
+      padding-bottom: 2mm;
+      border-bottom: 2px solid var(--cta);
+    }
+
+    .section-intro {
+      font-family: var(--font-body);
+      font-size: 9pt;
+      color: var(--text-muted);
+      margin-bottom: 5mm;
+      line-height: 1.5;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-body);
+      font-size: 8.5pt;
+    }
+
+    thead tr {
+      background: var(--hero-bg);
+      color: var(--white);
+    }
+
+    thead th {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 3mm 3.5mm;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--light-grey);
+    }
+
+    tbody td {
+      padding: 2.5mm 3.5mm;
+      vertical-align: top;
+      color: var(--text-primary);
+      line-height: 1.45;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 20px;
+      font-family: var(--font-body);
+      font-size: 7.5pt;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .pill-pass, .pill-licensed {
+      background: var(--pass-bg);
+      color: var(--pass-text);
+      border: 1px solid var(--pass-border);
+    }
+
+    .pill-fail {
+      background: var(--fail-bg);
+      color: var(--fail-text);
+      border: 1px solid var(--fail-border);
+    }
+
+    .pill-skip, .pill-not-licensed {
+      background: var(--skip-bg);
+      color: var(--skip-text);
+      border: 1px solid var(--skip-border);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-family: var(--font-heading);
+      font-size: 7pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .badge-critical { background: var(--sev-critical-bg); color: var(--sev-critical-text); }
+    .badge-high     { background: var(--sev-high-bg);     color: var(--sev-high-text); }
+    .badge-medium   { background: var(--sev-medium-bg);   color: var(--sev-medium-text); }
+    .badge-low      { background: var(--sev-low-bg);      color: var(--sev-low-text); }
+    .badge-info     { background: var(--sev-info-bg);     color: var(--sev-info-text); }
+
+    .tag-list { display: flex; flex-wrap: wrap; gap: 2px; }
+
+    .tag {
+      font-family: var(--font-mono);
+      font-size: 6.5pt;
+      color: var(--hero-bg);
+      background: rgba(27, 77, 98, 0.08);
+      border: 1px solid rgba(27, 77, 98, 0.18);
+      border-radius: 3px;
+      padding: 1px 4px;
+    }
+
+    .category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--light-grey);
+      border-left: 4px solid var(--cta);
+      border-radius: 0 4px 4px 0;
+      padding: 3.5mm 4mm;
+      margin-bottom: 4mm;
+    }
+
+    .category-header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5mm;
+    }
+
+    .category-name {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 11pt;
+      color: var(--hero-bg);
+      text-transform: capitalize;
+    }
+
+    .category-name-slug {
+      font-family: var(--font-mono);
+      font-size: 7pt;
+      color: var(--text-muted);
+    }
+
+    .category-score-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--hero-bg);
+      color: var(--white);
+      border-radius: 4px;
+      padding: 2.5mm 4mm;
+      min-width: 18mm;
+    }
+
+    .category-score-num {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 16pt;
+      line-height: 1;
+    }
+
+    .category-score-label {
+      font-family: var(--font-body);
+      font-size: 6.5pt;
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .mono-val {
+      font-family: var(--font-mono);
+      font-size: 7.5pt;
+      color: var(--text-primary);
+      word-break: break-all;
+    }
+
+    .findings-table td:nth-child(1) { width: 16mm; }
+    .findings-table td:nth-child(3) { width: 16mm; }
+    .findings-table td:nth-child(4) { width: 16mm; }
+    .findings-table td:nth-child(5) { width: 28mm; }
+    .findings-table td:nth-child(6) { width: 28mm; }
+
+    .license-blocked-note {
+      font-family: var(--font-body);
+      font-size: 7pt;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 1mm;
+    }
+
+    .method-section { margin-bottom: 7mm; }
+
+    .method-section-title {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 10pt;
+      color: var(--hero-bg);
+      margin-bottom: 2.5mm;
+    }
+
+    .method-section-body {
+      font-family: var(--font-body);
+      font-size: 9pt;
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    .method-section-body p+p { margin-top: 2mm; }
+
+    .scoring-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3mm;
+      margin-top: 3mm;
+    }
+
+    .scoring-item {
+      background: var(--light-grey);
+      border-radius: 4px;
+      padding: 3mm 4mm;
+    }
+
+    .scoring-item-label {
+      font-family: var(--font-heading);
+      font-size: 8pt;
+      font-weight: 600;
+      color: var(--hero-bg);
+      margin-bottom: 1mm;
+    }
+
+    .scoring-item-desc {
+      font-family: var(--font-body);
+      font-size: 7.5pt;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    .disclaimer-box {
+      background: var(--fail-bg);
+      border: 1px solid var(--fail-border);
+      border-radius: 4px;
+      padding: 4mm 5mm;
+      margin-top: 5mm;
+    }
+
+    .disclaimer-box-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 9pt;
+      color: var(--fail-text);
+      margin-bottom: 2mm;
+    }
+
+    .disclaimer-box-text {
+      font-family: var(--font-body);
+      font-size: 8pt;
+      color: var(--text-primary);
+      line-height: 1.55;
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 3mm;
+      margin-top: 4mm;
+    }
+
+    .contact-item {
+      background: var(--light-grey);
+      border-radius: 4px;
+      padding: 3mm 4mm;
+    }
+
+    .contact-item-label {
+      font-family: var(--font-heading);
+      font-size: 7.5pt;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 1mm;
+    }
+
+    .contact-item-value {
+      font-family: var(--font-body);
+      font-size: 8.5pt;
+      color: var(--hero-bg);
+      font-weight: 500;
+    }
+
+    @media print {
+      .no-print { display: none !important; }
+
+      .page {
+        page-break-before: always;
+        page-break-inside: avoid;
+      }
+
+      .page:first-child {
+        page-break-before: auto;
+      }
+
+      .category-header {
+        page-break-after: avoid;
+      }
+
+      thead {
+        display: table-header-group;
+      }
+
+      tr {
+        page-break-inside: avoid;
+      }
+    }
+
+    @media screen {
+      body {
+        background: #888;
+        padding: 10mm;
+      }
+
+      .page {
+        display: block;
+        margin: 0 auto 10mm;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    .summary-lede {
+      font-family: var(--font-body);
+      font-size: 10.2pt;
+      line-height: 1.65;
+      color: var(--text-primary);
+      margin-bottom: 5mm;
+    }
+
+    .summary-lede strong { color: var(--hero-bg); }
+
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3mm;
+      margin: 5mm 0 6mm;
+    }
+
+    .metric-card {
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 3.5mm;
+      background: var(--white);
+    }
+
+    .metric-label {
+      display: block;
+      font-size: 6.8pt;
+      font-weight: 700;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.5mm;
+    }
+
+    .metric-value {
+      display: block;
+      font-family: var(--font-heading);
+      font-size: 17pt;
+      font-weight: 700;
+      color: var(--hero-bg);
+      line-height: 1;
+    }
+
+    .metric-value.good { color: var(--pass-text); }
+    .metric-value.warn { color: #f59e0b; }
+
+    .metric-sub {
+      display: block;
+      font-size: 7.3pt;
+      color: var(--text-muted);
+      margin-top: 1.5mm;
+      line-height: 1.35;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 5mm;
+      margin-top: 5mm;
+    }
+
+    .summary-panel {
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 4mm;
+      background: var(--white);
+    }
+
+    .summary-panel-title {
+      font-family: var(--font-heading);
+      font-size: 9pt;
+      font-weight: 700;
+      color: var(--hero-bg);
+      margin-bottom: 2.5mm;
+    }
+
+    .summary-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 2.3mm;
+    }
+
+    .summary-list li {
+      font-size: 8.5pt;
+      line-height: 1.45;
+      color: var(--text-primary);
+      padding-left: 4mm;
+      position: relative;
+    }
+
+    .summary-list li::before {
+      content: "";
+      width: 1.7mm;
+      height: 1.7mm;
+      border-radius: 50%;
+      background: var(--cta);
+      position: absolute;
+      left: 0;
+      top: 1.7mm;
+    }
+
+    .mini-table td:first-child {
+      font-weight: 700;
+      color: var(--hero-bg);
+      width: 48%;
+    }
+
+    .chart-page-intro {
+      font-size: 9pt;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 4mm;
+    }
+
+    .chart-frame {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--white);
+      overflow: hidden;
+      margin-bottom: 4mm;
+    }
+
+    .chart-frame-header {
+      background: var(--hero-bg);
+      color: var(--white);
+      padding: 3mm 4mm;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chart-frame-title {
+      font-family: var(--font-heading);
+      font-size: 9pt;
+      font-weight: 700;
+    }
+
+    .chart-frame-meta {
+      font-family: var(--font-mono);
+      font-size: 7pt;
+      color: var(--cta);
+    }
+
+    .svg-chart {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: #fbfcfd;
+    }
+
+    .chart-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4mm;
+      margin-bottom: 4mm;
+    }
+
+    .chart-caption {
+      padding: 2.5mm 4mm 3mm;
+      font-size: 7.8pt;
+      color: var(--text-muted);
+      line-height: 1.45;
+      border-top: 1px solid var(--border);
+      background: var(--white);
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 4mm;
+      align-items: center;
+      font-size: 7.5pt;
+      color: var(--text-muted);
+      margin-top: 2mm;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 1.5mm;
+    }
+
+    .legend-swatch {
+      width: 8mm;
+      height: 2px;
+      display: inline-block;
+      background: var(--cta);
+    }
+
+    .legend-swatch.magenta { background: var(--brand-pink); }
+    .legend-swatch.navy   { background: var(--hero-bg); }
+
+    .trend-callout-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3mm;
+      margin-top: 4mm;
+    }
+
+    .trend-callout {
+      background: var(--light-grey);
+      border-left: 3px solid var(--cta);
+      border-radius: 0 4px 4px 0;
+      padding: 3mm;
+    }
+
+    .trend-callout strong {
+      display: block;
+      font-family: var(--font-heading);
+      font-size: 8pt;
+      color: var(--hero-bg);
+      margin-bottom: 1mm;
+    }
+
+    .trend-callout span {
+      display: block;
+      font-size: 7.5pt;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .opportunity-summary {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 5mm;
+      margin-bottom: 5mm;
+    }
+
+    .opportunity-copy {
+      font-size: 9pt;
+      line-height: 1.55;
+      color: var(--text-primary);
+    }
+
+    .opportunity-copy p+p { margin-top: 2.5mm; }
+
+    .score-stack-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--white);
+      padding: 4mm;
+    }
+
+    .score-stack-title {
+      font-family: var(--font-heading);
+      font-size: 9pt;
+      font-weight: 700;
+      color: var(--hero-bg);
+      margin-bottom: 3mm;
+    }
+
+    .score-stack-total {
+      display: flex;
+      align-items: baseline;
+      gap: 2mm;
+    }
+
+    .score-stack-number {
+      font-family: var(--font-heading);
+      font-size: 24pt;
+      font-weight: 700;
+      color: var(--hero-bg);
+      line-height: 1;
+    }
+
+    .score-stack-label {
+      font-size: 8pt;
+      color: var(--text-muted);
+    }
+
+    .score-stack-bar {
+      margin-top: 3mm;
+      height: 7mm;
+      border-radius: 20px;
+      background: var(--light-grey);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .score-stack-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cta), var(--brand-pink));
+      width: 0%;
+    }
+
+    .score-stack-note {
+      font-size: 7.5pt;
+      color: var(--text-muted);
+      margin-top: 2mm;
+      line-height: 1.4;
+    }
+
+    .opp-table td:nth-child(1) { width: 38mm; }
+    .opp-table td:nth-child(2),
+    .opp-table td:nth-child(3),
+    .opp-table td:nth-child(4) { width: 18mm; white-space: nowrap; }
+
+    .opp-bar {
+      width: 100%;
+      height: 5mm;
+      background: var(--light-grey);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .opp-bar-fill {
+      height: 100%;
+      background: var(--cta);
+      border-radius: 20px;
+    }
+
+    .opp-bar-fill.warn   { background: #f59e0b; }
+    .opp-bar-fill.danger { background: #ef4444; }
+
+    .priority-box-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3mm;
+      margin-top: 5mm;
+    }
+
+    .priority-box {
+      background: var(--light-grey);
+      border-radius: 5px;
+      padding: 3.5mm;
+      border-left: 3px solid var(--cta);
+    }
+
+    .priority-box.danger { border-left-color: #ef4444; }
+    .priority-box.warn   { border-left-color: #f59e0b; }
+
+    .priority-box-title {
+      font-family: var(--font-heading);
+      font-size: 8.2pt;
+      font-weight: 700;
+      color: var(--hero-bg);
+      margin-bottom: 1.5mm;
+    }
+
+    .priority-box-text {
+      font-size: 7.6pt;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .rec-table-compact { font-size: 7.8pt; }
+    .rec-table-compact th { font-size: 6.7pt; padding: 2.4mm 2.6mm; }
+    .rec-table-compact td { padding: 2.2mm 2.6mm; line-height: 1.35; }
+
+    .cost-low,   .impact-low  { color: #15803d; font-weight: 700; }
+    .cost-mod,   .impact-mod  { color: #f59e0b; font-weight: 700; }
+    .cost-high,  .impact-high { color: #dc2626; font-weight: 700; }
+
+    .remediation-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 3.2mm;
+    }
+
+    .remediation-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--white);
+      overflow: hidden;
+    }
+
+    .remediation-card-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 4mm;
+      background: var(--light-grey);
+      border-bottom: 1px solid var(--border);
+      padding: 3mm 3.5mm;
+    }
+
+    .remediation-title {
+      font-family: var(--font-heading);
+      font-size: 8.8pt;
+      font-weight: 700;
+      color: var(--hero-bg);
+      line-height: 1.25;
+    }
+
+    .remediation-meta {
+      display: flex;
+      gap: 1.5mm;
+      align-items: flex-start;
+      flex-shrink: 0;
+    }
+
+    .remediation-body {
+      padding: 3mm 3.5mm;
+      display: grid;
+      grid-template-columns: 1fr 1fr 0.9fr;
+      gap: 3mm;
+    }
+
+    .remediation-block-title {
+      font-family: var(--font-heading);
+      font-size: 7.2pt;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 1mm;
+    }
+
+    .remediation-block-text {
+      font-size: 7.5pt;
+      line-height: 1.45;
+      color: var(--text-primary);
+    }
+
+    .timeline-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2.5mm;
+      margin: 4mm 0 5mm;
+    }
+
+    .timeline-step {
+      background: var(--light-grey);
+      border-radius: 5px;
+      padding: 3mm;
+      border-top: 3px solid var(--cta);
+    }
+
+    .timeline-step strong {
+      display: block;
+      font-family: var(--font-heading);
+      font-size: 8pt;
+      color: var(--hero-bg);
+      margin-bottom: 1mm;
+    }
+
+    .timeline-step span {
+      display: block;
+      font-size: 7.4pt;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    .method-note {
+      background: var(--light-grey);
+      border-radius: 5px;
+      padding: 3.5mm 4mm;
+      font-size: 8.2pt;
+      color: var(--text-primary);
+      line-height: 1.5;
+      margin-top: 3mm;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════
+     PAGE 1 — COVER
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="page cover" id="cover">
+    <div class="cover-header">
+      <div class="cover-logo-wordmark">
+        <span class="cover-logo-intuity">intuity</span>
+        <span class="cover-logo-tech">Technologies</span>
+      </div>
+      <span class="cover-confidential-badge">Confidential</span>
+    </div>
+
+    <div class="cover-stripe"></div>
+
+    <div class="cover-body">
+      <div class="cover-eyebrow">Microsoft Secure Score</div>
+      <div class="cover-title">Quarterly Secure Score <br />Report</div>
+      <div class="cover-subtitle">{{ tenant_name }}</div>
+
+      <div class="cover-meta">
+        <div class="cover-meta-row">
+          <span class="cover-meta-label">Tenant ID</span>
+          <span class="cover-meta-value" style="font-family: var(--font-mono); font-size: 8.5pt">{{ tenant_id if tenant_id else 'N/A' }}</span>
+        </div>
+        <div class="cover-meta-row">
+          <span class="cover-meta-label">Generated</span>
+          <span class="cover-meta-value">{{ generated_date }}</span>
+        </div>
+        <div class="cover-meta-row">
+          <span class="cover-meta-label">Period</span>
+          <span class="cover-meta-value" style="font-family: var(--font-mono); font-size: 8.5pt">{{ period_start }} &#8211; {{ period_end }}</span>
+        </div>
+        <div class="cover-meta-row">
+          <span class="cover-meta-label">Prepared by</span>
+          <span class="cover-meta-value">Intuity Technologies</span>
+        </div>
+      </div>
+
+      <div class="cover-score-area">
+        <div class="score-gauge" id="cover-gauge">
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle class="score-gauge-track" cx="50" cy="50" r="42" />
+            <circle class="score-gauge-fill" id="gauge-fill" cx="50" cy="50" r="42"
+              stroke="{{ gauge_color }}"
+              stroke-dasharray="263.9"
+              stroke-dashoffset="{{ gauge_dashoffset }}" />
+          </svg>
+          <div class="score-gauge-inner">
+            <span class="score-number">{{ score_end_pct }}</span>
+            <span class="score-denom">/ 100</span>
+          </div>
+        </div>
+
+        <div class="score-band-info">
+          <span class="score-band-label band-{{ band_css_class }}">{{ score_band }}</span>
+          <span class="score-band-desc">{{ band_description }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cover-footer">
+      <span class="cover-footer-center">
+        This report is confidential and intended solely for the named
+        recipient organisation. Distribution or reproduction requires written
+        consent from Intuity Technologies.
+      </span>
+      <span class="cover-footer-right">intuity.ie</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+     PAGE 2 — EXECUTIVE SUMMARY
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="page" id="exec-summary">
+    <div class="page-header-bar">
+      <h1>Executive Summary</h1>
+      <div class="page-header-right">
+        <span class="page-header-tenant">{{ tenant_name }}</span>
+        <span class="page-header-date">{{ generated_iso }}</span>
+      </div>
+    </div>
+
+    <div class="page-inner exec-summary-body">
+      <p class="summary-lede">
+        Over the reporting period from <strong>{{ period_start }}</strong> to
+        <strong>{{ period_end }}</strong>, <strong>{{ tenant_name }}</strong>
+        {% if score_movement >= 0 %}
+        improved its Microsoft Secure Score from <strong>{{ score_start_pct }}%</strong>
+        to <strong>{{ score_end_pct }}%</strong>,
+        reaching <strong>{{ current_score_pts | int }} / {{ max_score_pts | int }} points</strong>.
+        This represents a <strong>+{{ score_movement }} percentage point increase</strong>
+        across the review window.
+        {% else %}
+        saw its Microsoft Secure Score move from <strong>{{ score_start_pct }}%</strong>
+        to <strong>{{ score_end_pct }}%</strong>
+        (<strong>{{ current_score_pts | int }} / {{ max_score_pts | int }} points</strong>),
+        a change of <strong>{{ score_movement }} percentage points</strong>.
+        {% endif %}
+      </p>
+
+      <p class="summary-lede">
+        The trend is <strong>{{ trend_direction }}</strong>
+        {% if r_squared > 0.5 %}and statistically consistent{% else %}with some variability{% endif %},
+        with a linear R&#178; of <strong>{{ r_squared }}</strong>.
+        {% if r_squared > 0.5 %}
+        This indicates that the improvement pattern is unlikely to be random drift and instead
+        reflects deliberate control activation, policy rollout, and remediation activity.
+        {% endif %}
+      </p>
+
+      <div class="metric-strip">
+        <div class="metric-card">
+          <span class="metric-label">Current Score</span>
+          <span class="metric-value">{{ score_end_pct }}%</span>
+          <span class="metric-sub">{{ current_score_pts | int }} / {{ max_score_pts | int }} points</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="metric-label">Score Movement</span>
+          <span class="metric-value {% if score_movement >= 0 %}good{% else %}warn{% endif %}">
+            {% if score_movement >= 0 %}+{% endif %}{{ score_movement }}
+          </span>
+          <span class="metric-sub">percentage points</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="metric-label">Trend Strength</span>
+          <span class="metric-value">{{ r_squared }}</span>
+          <span class="metric-sub">linear R&#178; correlation</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="metric-label">Positive Days</span>
+          <span class="metric-value {% if positive_days_pct >= 60 %}good{% elif positive_days_pct >= 40 %}warn{% else %}{% endif %}">
+            {{ positive_days_pct }}%
+          </span>
+          <span class="metric-sub">{{ positive_days_count }} of {{ total_daily_changes }} daily changes</span>
+        </div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-panel">
+          <div class="summary-panel-title">Management Summary</div>
+          <ul class="summary-list">
+            {% for bullet in management_bullets %}
+            <li>{{ bullet }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <div class="summary-panel">
+          <div class="summary-panel-title">Score Statistics</div>
+          <table class="mini-table">
+            <tbody>
+              <tr>
+                <td>Average score</td>
+                <td>{{ avg_score }}%</td>
+              </tr>
+              <tr>
+                <td>Median score</td>
+                <td>{{ median_score }}%</td>
+              </tr>
+              <tr>
+                <td>Best score</td>
+                <td>{{ best_score }}%</td>
+              </tr>
+              <tr>
+                <td>Worst score</td>
+                <td>{{ worst_score }}%</td>
+              </tr>
+              <tr>
+                <td>Volatility</td>
+                <td>{{ volatility }}%</td>
+              </tr>
+              <tr>
+                <td>Data points</td>
+                <td>{{ data_points }}</td>
+              </tr>
+              <tr>
+                <td>Significant events</td>
+                <td>{{ significant_events }} detected</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="band-callout">
+        <div class="band-callout-title">Secure Score Position: {{ score_band }}</div>
+        <div class="band-callout-text">{{ band_callout_text }}</div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">
+        Intuity Technologies &#8212; Microsoft Secure Score Report &#8212; {{ tenant_name }}
+      </span>
+      <span class="page-footer-right">CONFIDENTIAL &#183; Page 2</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+     PAGE 3 — TREND ANALYSIS
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="page" id="trend-analysis">
+    <div class="page-header-bar">
+      <h1>Trend Analysis</h1>
+      <div class="page-header-right">
+        <span class="page-header-tenant">{{ tenant_name }}</span>
+        <span class="page-header-date">{{ generated_iso }}</span>
+      </div>
+    </div>
+
+    <div class="page-inner">
+      <div class="section-title">{{ data_points }}-Day Secure Score Movement</div>
+
+      <p class="chart-page-intro">
+        The charts below summarise the tenant's Secure Score movement across the reporting
+        period from {{ period_start }} to {{ period_end }}. The score
+        {% if score_movement >= 0 %}increased{% else %}changed{% endif %}
+        from {{ score_start_pct }}% to {{ score_end_pct }}%.
+      </p>
+
+      <!-- Main trend chart -->
+      <div class="chart-frame">
+        <div class="chart-frame-header">
+          <span class="chart-frame-title">Secure Score Trend (% of Maximum)</span>
+          <span class="chart-frame-meta">{{ period_start }} &#8211; {{ period_end }}</span>
+        </div>
+
+        <svg class="svg-chart" viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg"
+             role="img" aria-label="{{ trend_chart.aria_label }}">
+          <defs>
+            <linearGradient id="scoreFill" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#3abfcf" stop-opacity="0.28" />
+              <stop offset="100%" stop-color="#3abfcf" stop-opacity="0.02" />
+            </linearGradient>
+          </defs>
+
+          <rect x="0" y="0" width="760" height="260" fill="#fbfcfd" />
+
+          <g stroke="#e5e7eb" stroke-width="1">
+            <line x1="60" y1="40" x2="730" y2="40" />
+            <line x1="60" y1="80" x2="730" y2="80" />
+            <line x1="60" y1="120" x2="730" y2="120" />
+            <line x1="60" y1="160" x2="730" y2="160" />
+            <line x1="60" y1="200" x2="730" y2="200" />
+          </g>
+
+          <g font-family="Lato, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end">
+            {% for lbl in trend_chart.y_labels %}
+            <text x="{{ lbl.x }}" y="{{ lbl.y }}">{{ lbl.text }}</text>
+            {% endfor %}
+          </g>
+
+          {% if trend_chart.milestones %}
+          <g stroke="#e4007c" stroke-width="1.2" stroke-dasharray="5 5" opacity="0.45">
+            {% for m in trend_chart.milestones %}
+            <line x1="{{ m.x }}" y1="35" x2="{{ m.x }}" y2="205" />
+            {% endfor %}
+          </g>
+          <g font-family="Lato, Arial, sans-serif" font-size="10" fill="#6b7280">
+            {% for m in trend_chart.milestones %}
+            <text x="{{ m.x }}" y="224" text-anchor="middle">{{ m.label }}</text>
+            {% endfor %}
+          </g>
+          {% endif %}
+
+          <path d="{{ trend_chart.area_path }}" fill="url(#scoreFill)" />
+
+          <path d="{{ trend_chart.score_path }}"
+                fill="none" stroke="#1b4d62" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round" />
+
+          <path d="{{ trend_chart.mavg_path }}"
+                fill="none" stroke="#3abfcf" stroke-width="3"
+                stroke-linecap="round" stroke-linejoin="round" />
+
+          <path d="M{{ trend_chart.trend_x0 }},{{ trend_chart.trend_y0 }} L{{ trend_chart.trend_x1 }},{{ trend_chart.trend_y1 }}"
+                fill="none" stroke="#e4007c" stroke-width="2"
+                stroke-dasharray="8 6" stroke-linecap="round" />
+
+          <g font-family="Poppins, Arial, sans-serif" font-weight="700">
+            <circle cx="{{ trend_chart.start_cx }}" cy="{{ trend_chart.start_cy }}" r="4" fill="#1b4d62" />
+            <text x="{{ trend_chart.start_cx + 8 }}" y="{{ trend_chart.start_cy + 4 }}"
+                  font-size="12" fill="#1b4d62">{{ score_start_pct }}%</text>
+
+            <circle cx="{{ trend_chart.end_cx }}" cy="{{ trend_chart.end_cy }}" r="4" fill="#3abfcf" />
+            <text x="{{ trend_chart.end_label_x }}" y="{{ trend_chart.end_label_y }}"
+                  font-size="12" fill="#1b4d62">{{ score_end_pct }}%</text>
+          </g>
+
+          <g font-family="Lato, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle">
+            {% for lbl in trend_chart.x_labels %}
+            <text x="{{ lbl.x }}" y="246">{{ lbl.text }}</text>
+            {% endfor %}
+          </g>
+        </svg>
+
+        <div class="chart-caption">
+          {{ trend_chart.caption }}
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-swatch navy"></span>Daily score</span>
+            <span class="legend-item"><span class="legend-swatch"></span>Moving average</span>
+            <span class="legend-item"><span class="legend-swatch magenta"></span>Linear trend</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-grid-2">
+        <!-- Distribution chart -->
+        <div class="chart-frame">
+          <div class="chart-frame-header">
+            <span class="chart-frame-title">Score Distribution</span>
+            <span class="chart-frame-meta">{{ dist_chart.data_pts_label }}</span>
+          </div>
+
+          <svg class="svg-chart" viewBox="0 0 365 170" xmlns="http://www.w3.org/2000/svg"
+               role="img" aria-label="Secure Score distribution chart">
+            <rect x="0" y="0" width="365" height="170" fill="#fbfcfd" />
+
+            <g stroke="#e5e7eb" stroke-width="1">
+              <line x1="42" y1="28" x2="340" y2="28" />
+              <line x1="42" y1="62" x2="340" y2="62" />
+              <line x1="42" y1="96" x2="340" y2="96" />
+              <line x1="42" y1="130" x2="340" y2="130" />
+            </g>
+
+            <g fill="#3abfcf">
+              {% for bar in dist_chart.bars %}
+              <rect x="{{ bar.x }}" y="{{ bar.y }}" width="{{ bar.w }}" height="{{ bar.h }}" rx="2" />
+              {% endfor %}
+            </g>
+
+            <line x1="{{ dist_chart.mean_x }}" y1="24" x2="{{ dist_chart.mean_x }}" y2="132"
+                  stroke="#e4007c" stroke-width="2" stroke-dasharray="5 4" />
+            <line x1="{{ dist_chart.median_x }}" y1="24" x2="{{ dist_chart.median_x }}" y2="132"
+                  stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 4" />
+
+            <g font-family="Lato, Arial, sans-serif" font-size="9" fill="#6b7280" text-anchor="middle">
+              {% for lbl in dist_chart.x_labels %}
+              <text x="{{ lbl.x }}" y="151">{{ lbl.text }}</text>
+              {% endfor %}
+            </g>
+
+            <g font-family="Lato, Arial, sans-serif" font-size="9">
+              <text x="48" y="18" fill="#e4007c">Mean {{ avg_score }}%</text>
+              <text x="{{ dist_chart.median_x + 6 }}" y="18" fill="#f59e0b">Median {{ median_score }}%</text>
+            </g>
+          </svg>
+
+          <div class="chart-caption">
+            Scores clustered around {{ avg_score }}% over the reporting period.
+          </div>
+        </div>
+
+        <!-- Daily change chart -->
+        <div class="chart-frame">
+          <div class="chart-frame-header">
+            <span class="chart-frame-title">Daily Score Changes</span>
+            <span class="chart-frame-meta">+ / - movement</span>
+          </div>
+
+          <svg class="svg-chart" viewBox="0 0 365 170" xmlns="http://www.w3.org/2000/svg"
+               role="img" aria-label="Daily Secure Score changes chart">
+            <rect x="0" y="0" width="365" height="170" fill="#fbfcfd" />
+
+            <line x1="34" y1="84" x2="340" y2="84" stroke="#1b4d62" stroke-width="1.2" />
+
+            <g fill="#3abfcf">
+              {% for bar in changes_chart.positive_bars %}
+              <rect x="{{ bar.x }}" y="{{ bar.y }}" width="{{ bar.w }}" height="{{ bar.h }}" />
+              {% endfor %}
+            </g>
+
+            <g fill="#e4007c">
+              {% for bar in changes_chart.negative_bars %}
+              <rect x="{{ bar.x }}" y="{{ bar.y }}" width="{{ bar.w }}" height="{{ bar.h }}" />
+              {% endfor %}
+            </g>
+
+            <g font-family="Lato, Arial, sans-serif" font-size="9" fill="#6b7280">
+              <text x="22" y="{{ changes_chart.y_label_pos_y + 4 }}" text-anchor="end">{{ changes_chart.y_label_pos_val }}</text>
+              <text x="22" y="88" text-anchor="end">0</text>
+              <text x="22" y="{{ changes_chart.y_label_neg_y + 4 }}" text-anchor="end">{{ changes_chart.y_label_neg_val }}</text>
+            </g>
+
+            <g font-family="Lato, Arial, sans-serif" font-size="9" fill="#6b7280" text-anchor="middle">
+              {% for lbl in changes_chart.month_labels %}
+              <text x="{{ lbl.x }}" y="151">{{ lbl.text }}</text>
+              {% endfor %}
+            </g>
+          </svg>
+
+          <div class="chart-caption">
+            {{ changes_chart.caption }}
+          </div>
+        </div>
+      </div>
+
+      <div class="trend-callout-row">
+        {% for callout in trend_callouts %}
+        <div class="trend-callout">
+          <strong>{{ callout.title }}</strong>
+          <span>{{ callout.text }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">
+        Intuity Technologies &#8212; Microsoft Secure Score Report &#8212; {{ tenant_name }}
+      </span>
+      <span class="page-footer-right">CONFIDENTIAL &#183; Page 3</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+     PAGE 4 — SCORE OPPORTUNITY BY CATEGORY
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="page" id="score-opportunity">
+    <div class="page-header-bar">
+      <h1>Score Opportunity by Category</h1>
+      <div class="page-header-right">
+        <span class="page-header-tenant">{{ tenant_name }}</span>
+        <span class="page-header-date">{{ generated_iso }}</span>
+      </div>
+    </div>
+
+    <div class="page-inner">
+      <div class="section-title">Where the Remaining Secure Score Points Sit</div>
+
+      <div class="opportunity-summary">
+        <div class="opportunity-copy">
+          <p>
+            {{ tenant_name }} currently holds <strong>{{ current_score_pts | int }} of {{ max_score_pts | int }} available points</strong>,
+            leaving <strong>{{ remaining_pts | int }} points</strong> of identified Secure Score improvement opportunity.
+            {% if category_breakdown %}
+            The largest remaining gains are concentrated in
+            {% for cat in category_breakdown[:3] %}{{ cat.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+            controls.
+            {% endif %}
+          </p>
+          <p>
+            Not all categories carry the same operational risk.
+            Identity and endpoint controls should be prioritised first, as they directly reduce
+            account compromise, privilege escalation, and malware exposure.
+          </p>
+        </div>
+
+        <div class="score-stack-card">
+          <div class="score-stack-title">Current Secure Score Position</div>
+          <div class="score-stack-total">
+            <span class="score-stack-number">{{ current_score_pts | int }}</span>
+            <span class="score-stack-label">/ {{ max_score_pts | int }} points achieved</span>
+          </div>
+          <div class="score-stack-bar">
+            <div class="score-stack-fill" style="width: {{ score_end_pct }}%;"></div>
+          </div>
+          <div class="score-stack-note">
+            Current position: {{ score_end_pct }}%. Remaining opportunity: {{ remaining_pts | int }} points.
+          </div>
+        </div>
+      </div>
+
+      {% if category_breakdown %}
+      <table class="opp-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Current</th>
+            <th>Available</th>
+            <th>Remaining</th>
+            <th>Completion</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cat in category_breakdown %}
+          <tr>
+            <td><strong>{{ cat.name }}</strong></td>
+            <td>{{ cat.current_pts }}</td>
+            <td>{{ cat.max_pts }}</td>
+            <td>{{ cat.remaining_pts }}</td>
+            <td>
+              <div class="opp-bar">
+                <div class="opp-bar-fill {{ cat.bar_class }}" style="width:{{ cat.pct_complete }}%;"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="priority-box-grid">
+        {% for box in priority_boxes %}
+        <div class="priority-box {{ box.css_class }}">
+          <div class="priority-box-title">{{ box.title }}</div>
+          <div class="priority-box-text">{{ box.text }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="section-intro">
+        No control profile data was provided. To populate this section, include the
+        <code>control_profiles</code> array in the POST body.
+      </p>
+      {% endif %}
+
+      <div class="band-callout">
+        <div class="band-callout-title">Interpretation</div>
+        <div class="band-callout-text">
+          The next remediation cycle should focus on controls that reduce compromise likelihood
+          first, then move into governance, reporting, and operational maturity.
+          Identity and privileged access controls are prioritised first because they provide the
+          largest reduction in tenant-wide blast radius.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">
+        Intuity Technologies &#8212; Microsoft Secure Score Report &#8212; {{ tenant_name }}
+      </span>
+      <span class="page-footer-right">CONFIDENTIAL &#183; Page 4</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+     PAGE 5 — SECURITY CONTROL RECOMMENDATIONS
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="page" id="control-recommendations">
+    <div class="page-header-bar">
+      <h1>Security Control Recommendations</h1>
+      <div class="page-header-right">
+        <span class="page-header-tenant">{{ tenant_name }}</span>
+        <span class="page-header-date">{{ generated_iso }}</span>
+      </div>
+    </div>
+
+    <div class="page-inner">
+      <div class="section-title">Prioritised Secure Score Improvement Actions</div>
+
+      <p class="section-intro">
+        The following controls represent the highest-value improvement opportunities identified
+        during this review. They are ordered by Microsoft rank (a combination of security impact,
+        Secure Score value, implementation effort, and dependency sequencing).
+      </p>
+
+      {% if controls %}
+      <table class="rec-table-compact">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Control</th>
+            <th>Category</th>
+            <th>Pts</th>
+            <th>Severity</th>
+            <th>Cost</th>
+            <th>User Impact</th>
+            <th>Threats Reduced</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ctrl in controls %}
+          <tr>
+            <td>{{ ctrl.rank if ctrl.rank else '—' }}</td>
+            <td>{{ ctrl.title }}</td>
+            <td>{{ ctrl.controlCategory }}</td>
+            <td>{{ ctrl.maxScore | int }}</td>
+            <td><span class="badge badge-{{ ctrl.severity_css }}">{{ ctrl.severity_label }}</span></td>
+            <td class="cost-{{ ctrl.cost_css }}">{{ ctrl.implementationCost | capitalize if ctrl.implementationCost else '—' }}</td>
+            <td class="impact-{{ ctrl.impact_css }}">{{ ctrl.userImpact | capitalize if ctrl.userImpact else '—' }}</td>
+            <td>{{ ctrl.threats_str }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="timeline-strip">
+        <div class="timeline-step">
+          <strong>Week 1&#8211;2</strong>
+          <span>Identity baseline: MFA, legacy auth, admin account separation.</span>
+        </div>
+        <div class="timeline-step">
+          <strong>Week 3&#8211;4</strong>
+          <span>PIM rollout, SSPR, password protection, Conditional Access tuning.</span>
+        </div>
+        <div class="timeline-step">
+          <strong>Week 5&#8211;8</strong>
+          <span>Endpoint enrolment, compliance policies, Defender onboarding.</span>
+        </div>
+        <div class="timeline-step">
+          <strong>Week 9&#8211;12</strong>
+          <span>DLP, audit, OAuth review, guest access, reporting validation.</span>
+        </div>
+      </div>
+
+      <div class="band-callout">
+        <div class="band-callout-title">Implementation Note</div>
+        <div class="band-callout-text">
+          User-facing controls should be piloted before tenant-wide enforcement. MFA,
+          device compliance, DLP, and access blocking can interrupt users if exception
+          handling, communications, and service-owner approval are skipped.
+        </div>
+      </div>
+      {% else %}
+      <p class="section-intro">
+        No control profile data was provided. Include the <code>control_profiles</code>
+        array in the POST body (Graph API: GET /security/secureScoreControlProfiles).
+      </p>
+      {% endif %}
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">
+        Intuity Technologies &#8212; Microsoft Secure Score Report &#8212; {{ tenant_name }}
+      </span>
+      <span class="page-footer-right">CONFIDENTIAL &#183; Page 5</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+     PAGES 6+ — REMEDIATION PLAYBOOK (dynamic, 5 controls per page)
+  ═══════════════════════════════════════════════════════════════ -->
+  {% for page in remediation_pages %}
+  <section class="page" id="remediation-page-{{ loop.index }}">
+    <div class="page-header-bar">
+      <h1>Remediation Playbook</h1>
+      <div class="page-header-right">
+        <span class="page-header-tenant">{{ tenant_name }}</span>
+        <span class="page-header-date">{{ generated_iso }}</span>
+      </div>
+    </div>
+
+    <div class="page-inner">
+      <div class="section-title">{{ page.section_title }}</div>
+
+      <p class="section-intro">
+        The following controls represent prioritised remediation actions.
+        Each entry includes the recommended action, implementation guidance, and a direct
+        link to the Microsoft portal where applicable.
+      </p>
+
+      <div class="remediation-grid">
+        {% for ctrl in page.controls %}
+        <div class="remediation-card">
+          <div class="remediation-card-header">
+            <div class="remediation-title">{{ ctrl.rank if ctrl.rank else loop.index }}. {{ ctrl.title }}</div>
+            <div class="remediation-meta">
+              <span class="badge badge-{{ ctrl.severity_css }}">{{ ctrl.severity_label }}</span>
+              <span class="pill pill-licensed">Licensed</span>
+            </div>
+          </div>
+          <div class="remediation-body">
+            <div>
+              <div class="remediation-block-title">Action</div>
+              <div class="remediation-block-text">{{ ctrl.remediation if ctrl.remediation else 'See Microsoft documentation for remediation steps.' }}</div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Implementation Notes</div>
+              <div class="remediation-block-text">{{ ctrl.remediationImpact if ctrl.remediationImpact else 'Review impact before deploying to all users.' }}</div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Validation</div>
+              <div class="remediation-block-text">
+                {% if ctrl.actionUrl %}
+                <a href="{{ ctrl.actionUrl }}" style="color: var(--cta);">Take action in Microsoft portal &#8594;</a>
+                {% else %}
+                Verify control status in the Microsoft 365 Security Centre after implementation.
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">
+        Intuity Technologies &#8212; Microsoft Secure Score Report &#8212; {{ tenant_name }}
+      </span>
+      <span class="page-footer-right">CONFIDENTIAL &#183; Page {{ page.page_number }}</span>
+    </div>
+  </section>
+  {% endfor %}
+
+  <!-- ═══════════════════════════════════════════════════════════
+     FINAL PAGE — METHODOLOGY AND DISCLAIMER
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="page" id="methodology-disclaimer">
+    <div class="page-header-bar">
+      <h1>Methodology and Disclaimer</h1>
+      <div class="page-header-right">
+        <span class="page-header-tenant">{{ tenant_name }}</span>
+        <span class="page-header-date">{{ generated_iso }}</span>
+      </div>
+    </div>
+
+    <div class="page-inner">
+      <div class="method-section">
+        <div class="method-section-title">Assessment Methodology</div>
+        <div class="method-section-body">
+          <p>
+            This report is based on Microsoft Secure Score data, tenant configuration
+            observations, and available Microsoft 365 security control signals at the time
+            of generation. The assessment reviews enabled controls, incomplete improvement
+            actions, control categories, score movement, and prioritised remediation
+            opportunities.
+          </p>
+          <p>
+            Secure Score is used as a directional benchmark for Microsoft 365 security
+            maturity. It should be interpreted alongside operational context, licensing,
+            business requirements, exception handling, and user impact.
+          </p>
+        </div>
+      </div>
+
+      <div class="method-section">
+        <div class="method-section-title">Scoring Interpretation</div>
+        <div class="scoring-grid">
+          <div class="scoring-item">
+            <div class="scoring-item-label">80&#8211;100: Strong Position</div>
+            <div class="scoring-item-desc">
+              Core Microsoft 365 security controls are mature, consistently enforced, and
+              actively monitored.
+            </div>
+          </div>
+          <div class="scoring-item">
+            <div class="scoring-item-label">65&#8211;79: Improving Position</div>
+            <div class="scoring-item-desc">
+              Security foundation is mostly in place, with remaining medium or high-value
+              controls requiring completion.
+            </div>
+          </div>
+          <div class="scoring-item">
+            <div class="scoring-item-label">40&#8211;64: Significant Gaps</div>
+            <div class="scoring-item-desc">
+              Multiple high-value controls remain incomplete. Remediation should be treated
+              as a managed workstream.
+            </div>
+          </div>
+          <div class="scoring-item">
+            <div class="scoring-item-label">0&#8211;39: High Exposure</div>
+            <div class="scoring-item-desc">
+              Foundational protections are missing or inconsistently configured. Immediate
+              remediation is recommended.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="method-section">
+        <div class="method-section-title">Assumptions and Scope</div>
+        <div class="method-section-body">
+          <p>
+            The report reflects the Microsoft 365 tenant state available at the time of
+            collection. It does not include manual penetration testing, endpoint forensic
+            review, source code review, identity compromise assessment, firewall review,
+            or third-party SaaS configuration review unless separately stated.
+          </p>
+          <p>
+            Some Secure Score recommendations may require additional licensing, staged
+            rollout, change approval, communications, pilot testing, or exception handling
+            before enforcement.
+          </p>
+        </div>
+
+        <div class="method-note">
+          Recommended remediation sequencing is based on risk reduction and operational
+          practicality. Identity and privileged access controls are prioritised first because
+          they provide the largest reduction in compromise likelihood and tenant-wide blast
+          radius.
+        </div>
+      </div>
+
+      <div class="disclaimer-box">
+        <div class="disclaimer-box-title">Disclaimer</div>
+        <div class="disclaimer-box-text">
+          This report is provided for informational and advisory purposes only. Secure Score
+          is not a guarantee of security, breach prevention, regulatory compliance, or absence
+          of risk. The findings and recommendations should be validated against
+          {{ tenant_name }}'s business requirements, licensing position, operational
+          constraints, and internal change control processes before implementation.
+        </div>
+      </div>
+
+      <div class="method-section" style="margin-top: 6mm;">
+        <div class="method-section-title">Contact</div>
+        <div class="contact-grid">
+          <div class="contact-item">
+            <div class="contact-item-label">Prepared By</div>
+            <div class="contact-item-value">Intuity Technologies</div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-item-label">Support</div>
+            <div class="contact-item-value">technicalsupport@intuity.ie</div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-item-label">Website</div>
+            <div class="contact-item-value">intuity.ie</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">
+        Intuity Technologies &#8212; Microsoft Secure Score Report &#8212; {{ tenant_name }}
+      </span>
+      <span class="page-footer-right">CONFIDENTIAL &#183; Final Page</span>
+    </div>
+  </section>
+
+</body>
+
+</html>
