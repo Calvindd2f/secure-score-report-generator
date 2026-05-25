@@ -1,0 +1,22 @@
+{
+    "tenant_name": "Contoso Ltd",
+    "result": [
+        { "createdDateTime": "2024-01-01T00:00:00Z", "currentScore": 75, "maxScore": 100 }
+    ],
+    "control_profiles": [
+        {
+        "rank": 1, 
+        "title": "Enable MFA", 
+        "controlCategory": "Identity",
+        "maxScore": 9, 
+        "implementationCost": "low", 
+        "userImpact": "moderate",
+        "threats": ["accountBreach","phishingOrWhaling"],
+        "remediation": "Require MFA for all users via Conditional Access.",
+        "remediationImpact": "Users will be prompted for MFA on first sign-in.",
+        "actionUrl": "https://portal.azure.com/#blade/...", 
+        "tier": "Core", 
+        "service": "AAD"
+        }
+    ]
+}

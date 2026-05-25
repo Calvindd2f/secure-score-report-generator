@@ -1,0 +1,2814 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Score Report — Contoso Holdings Ltd</title>
+  <style>
+    /* ═══════════════════════════════════════════════════════════════
+   FONTS — self-contained via @import (Puppeteer-safe)
+═══════════════════════════════════════════════════════════════ */
+    @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Lato:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+    /* ═══════════════════════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES — Intuity Brand Tokens
+═══════════════════════════════════════════════════════════════ */
+    :root {
+      /* Brand palette */
+      --hero-bg: #1b4d62;
+      --cta: #3abfcf;
+      --cta-hover: #2ea8b8;
+      --brand-pink: #e4007c;
+      --white: #ffffff;
+      --light-grey: #f2f4f5;
+      --border: #e5e7eb;
+      --text-primary: #2d2d2d;
+      --text-muted: #6b7280;
+      --text-on-dark: #ffffff;
+
+      /* Status semantics */
+      --pass-bg: #dcfce7;
+      --pass-text: #15803d;
+      --pass-border: #86efac;
+      --fail-bg: #fee2e2;
+      --fail-text: #dc2626;
+      --fail-border: #fca5a5;
+      --skip-bg: #f3f4f6;
+      --skip-text: #6b7280;
+      --skip-border: #d1d5db;
+
+      /* Severity semantics */
+      --sev-critical-bg: #7f1d1d;
+      --sev-critical-text: #ffffff;
+      --sev-high-bg: #f97316;
+      --sev-high-text: #ffffff;
+      --sev-medium-bg: #f59e0b;
+      --sev-medium-text: #1a1a1a;
+      --sev-low-bg: #3b82f6;
+      --sev-low-text: #ffffff;
+      --sev-info-bg: #e5e7eb;
+      --sev-info-text: #374151;
+
+      /* Band colours */
+      --band-ready: #22c55e;
+      --band-near-ready: #f59e0b;
+      --band-significant: #ef4444;
+      --band-not-ready: #7f1d1d;
+
+      /* Licensed pill */
+      --lic-yes-bg: #dcfce7;
+      --lic-yes-text: #15803d;
+      --lic-no-bg: #f3f4f6;
+      --lic-no-text: #6b7280;
+
+      /* Typography */
+      --font-heading: "Poppins", Arial, sans-serif;
+      --font-body: "Lato", Arial, sans-serif;
+      --font-mono: "JetBrains Mono", Consolas, monospace;
+
+      /* Layout */
+      --page-w: 210mm;
+      --page-h: 297mm;
+      --gutter: 14mm;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+   PRINT / PDF SETUP
+═══════════════════════════════════════════════════════════════ */
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html,
+    body {
+      font-family: var(--font-body);
+      color: var(--text-primary);
+      background: var(--white);
+      font-size: 10pt;
+      line-height: 1.55;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+   PAGE WRAPPER — each .page is one A4 sheet
+═══════════════════════════════════════════════════════════════ */
+    .page {
+      width: var(--page-w);
+      min-height: var(--page-h);
+      position: relative;
+      overflow: hidden;
+      background: var(--white);
+      page-break-before: always;
+      page-break-inside: avoid;
+    }
+
+    .page:first-child {
+      page-break-before: auto;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+   PAGE 1 — COVER
+═══════════════════════════════════════════════════════════════ */
+    .cover {
+      background: var(--hero-bg);
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: var(--page-h);
+      color: var(--text-on-dark);
+      padding: 0;
+    }
+
+    .cover-header {
+      padding: 12mm var(--gutter) 8mm;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cover-logo-wordmark {
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+    }
+
+    .cover-logo-intuity {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 20pt;
+      color: var(--brand-pink);
+      letter-spacing: -0.5px;
+    }
+
+    .cover-logo-tech {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 8pt;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-left: 4px;
+      align-self: center;
+    }
+
+    .cover-confidential-badge {
+      font-family: var(--font-body);
+      font-size: 7pt;
+      color: rgba(255, 255, 255, 0.5);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 3px 8px;
+      border-radius: 3px;
+    }
+
+    /* accent stripe */
+    .cover-stripe {
+      height: 3px;
+      background: linear-gradient(90deg,
+          var(--cta) 0%,
+          var(--brand-pink) 100%);
+      width: 100%;
+    }
+
+    .cover-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 var(--gutter);
+    }
+
+    .cover-eyebrow {
+      font-family: var(--font-body);
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--cta);
+      margin-bottom: 6mm;
+    }
+
+    .cover-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 30pt;
+      line-height: 1.15;
+      color: var(--white);
+      margin-bottom: 3mm;
+    }
+
+    .cover-subtitle {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 16pt;
+      color: var(--cta);
+      margin-bottom: 10mm;
+    }
+
+    .cover-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2mm;
+      margin-bottom: 12mm;
+    }
+
+    .cover-meta-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .cover-meta-label {
+      font-family: var(--font-body);
+      font-size: 8pt;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      width: 30mm;
+      flex-shrink: 0;
+    }
+
+    .cover-meta-value {
+      font-family: var(--font-body);
+      font-size: 10pt;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+    }
+
+    /* Score gauge circle */
+    .cover-score-area {
+      display: flex;
+      align-items: center;
+      gap: 10mm;
+      margin-top: 4mm;
+    }
+
+    .score-gauge {
+      position: relative;
+      width: 44mm;
+      height: 44mm;
+      flex-shrink: 0;
+    }
+
+    .score-gauge svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .score-gauge-track {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.1);
+      stroke-width: 8;
+    }
+
+    .score-gauge-fill {
+      fill: none;
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.6s ease;
+    }
+
+    .score-gauge-inner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .score-number {
+      font-family: var(--font-heading);
+      font-size: 20pt;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1;
+    }
+
+    .score-denom {
+      font-family: var(--font-body);
+      font-size: 7pt;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .score-band-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2mm;
+    }
+
+    .score-band-label {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 14pt;
+    }
+
+    .score-band-desc {
+      font-family: var(--font-body);
+      font-size: 9pt;
+      color: rgba(255, 255, 255, 0.65);
+      max-width: 80mm;
+      line-height: 1.45;
+    }
+
+    /* band dynamic color classes applied via JS preview / Jinja inline style */
+    .band-ready {
+      color: #22c55e;
+    }
+
+    .band-near_ready {
+      color: #f59e0b;
+    }
+
+    .band-significant_gaps {
+      color: #ef4444;
+    }
+
+    .band-not_ready {
+      color: #fca5a5;
+    }
+
+    .cover-footer {
+      padding: 6mm var(--gutter);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cover-footer-left {
+      font-family: var(--font-body);
+      font-size: 7.5pt;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .cover-footer-right {
+      font-family: var(--font-mono);
+      font-size: 7pt;
+      color: rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.5px;
+    }
+
+    .cover-footer-center {
+      font-family: var(--font-mono);
+      font-size: 7pt;
+      color: rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.5px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+   SHARED PAGE COMPONENTS — header bar, footer, inner layout
+═══════════════════════════════════════════════════════════════ */
+    .page-inner {
+      padding: 0 var(--gutter) 10mm;
+    }
+
+    .page-header-bar {
+      background: var(--hero-bg);
+      padding: 5mm var(--gutter) 4mm;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8mm;
+    }
+
+    .page-header-bar h1 {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 13pt;
+      color: var(--white);
+      line-height: 1.2;
+    }
+
+    .page-header-bar .page-header-right {
+      text-align: right;
+    }
+
+    .page-header-tenant {
+      font-family: var(--font-body);
+      font-size: 8pt;
+      color: rgba(255, 255, 255, 0.7);
+      display: block;
+    }
+
+    .page-header-date {
+      font-family: var(--font-mono);
+      font-size: 7.5pt;
+      color: var(--cta);
+      display: block;
+    }
+
+    .page-footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 3mm var(--gutter);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--white);
+    }
+
+    .page-footer-left {
+      font-family: var(--font-body);
+      font-size: 7pt;
+      color: var(--text-muted);
+    }
+
+    .page-footer-right {
+      font-family: var(--font-mono);
+      font-size: 7pt;
+      color: var(--text-muted);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+   PAGE 2 — EXECUTIVE SUMMARY
+═══════════════════════════════════════════════════════════════ */
+    .exec-summary-body {
+      padding-bottom: 14mm;
+      /* room for footer */
+    }
+
+    .exec-summary-text {
+      font-family: var(--font-body);
+      font-size: 10pt;
+      line-height: 1.65;
+      color: var(--text-primary);
+      margin-bottom: 6mm;
+    }
+
+    .exec-summary-text p+p {
+      margin-top: 3.5mm;
+    }
+
+    /* KPI tile grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4mm;
+      margin: 6mm 0;
+    }
+
+    .kpi-tile {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 5mm 6mm;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5mm;
+    }
+
+    .kpi-tile-label {
+      font-family: var(--font-body);
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .kpi-tile-value {
+      font-family: var(--font-heading);
+      font-size: 20pt;
+      font-weight: 700;
+      color: var(--hero-bg);
+      line-height: 1;
+    }
+
+    .kpi-tile-sub {
+      font-family: var(--font-body);
+      font-size: 8pt;
+      color: var(--text-muted);
+    }
+
+    .kpi-tile.kpi-warning .kpi-tile-value {
+      color: #f59e0b;
+    }
+
+    .kpi-tile.kpi-danger .kpi-tile-value {
+      color: #dc2626;
+    }
+
+    .kpi-tile.kpi-good .kpi-tile-value {
+      color: #15803d;
+    }
+
+    /* Band explanation callout */
+    .band-callout {
+      background: var(--light-grey);
+      border-left: 4px solid var(--cta);
+      border-radius: 0 4px 4px 0;
+      padding: 4mm 5mm;
+      margin-top: 5mm;
+    }
+
+    .band-callout-title {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 9pt;
+      color: var(--hero-bg);
+      margin-bottom: 1.5mm;
+    }
+
+    .band-callout-text {
+      font-family: var(--font-body);
+      font-size: 8.5pt;
+      color: var(--text-primary);
+      line-height: 1.55;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+   PAGE 3 — CAPABILITY MATRIX
+═══════════════════════════════════════════════════════════════ */
+    .section-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 12pt;
+      color: var(--hero-bg);
+      margin-bottom: 4mm;
+      padding-bottom: 2mm;
+      border-bottom: 2px solid var(--cta);
+    }
+
+    .section-intro {
+      font-family: var(--font-body);
+      font-size: 9pt;
+      color: var(--text-muted);
+      margin-bottom: 5mm;
+      line-height: 1.5;
+    }
+
+    /* Tables — shared */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-body);
+      font-size: 8.5pt;
+    }
+
+    thead tr {
+      background: var(--hero-bg);
+      color: var(--white);
+    }
+
+    thead th {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 3mm 3.5mm;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--light-grey);
+    }
+
+    tbody td {
+      padding: 2.5mm 3.5mm;
+      vertical-align: top;
+      color: var(--text-primary);
+      line-height: 1.45;
+    }
+
+    /* Pill badges — status and license */
+    .pill {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 20px;
+      font-family: var(--font-body);
+      font-size: 7.5pt;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .pill-pass,
+    .pill-licensed {
+      background: var(--pass-bg);
+      color: var(--pass-text);
+      border: 1px solid var(--pass-border);
+    }
+
+    .pill-fail {
+      background: var(--fail-bg);
+      color: var(--fail-text);
+      border: 1px solid var(--fail-border);
+    }
+
+    .pill-skip,
+    .pill-not-licensed {
+      background: var(--skip-bg);
+      color: var(--skip-text);
+      border: 1px solid var(--skip-border);
+    }
+
+    /* Severity badge */
+    .badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-family: var(--font-heading);
+      font-size: 7pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .badge-critical {
+      background: var(--sev-critical-bg);
+      color: var(--sev-critical-text);
+    }
+
+    .badge-high {
+      background: var(--sev-high-bg);
+      color: var(--sev-high-text);
+    }
+
+    .badge-medium {
+      background: var(--sev-medium-bg);
+      color: var(--sev-medium-text);
+    }
+
+    .badge-low {
+      background: var(--sev-low-bg);
+      color: var(--sev-low-text);
+    }
+
+    .badge-info {
+      background: var(--sev-info-bg);
+      color: var(--sev-info-text);
+    }
+
+    /* Controls enabled tag list */
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+    }
+
+    .tag {
+      font-family: var(--font-mono);
+      font-size: 6.5pt;
+      color: var(--hero-bg);
+      background: rgba(27, 77, 98, 0.08);
+      border: 1px solid rgba(27, 77, 98, 0.18);
+      border-radius: 3px;
+      padding: 1px 4px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+   PAGES 4+ — FINDINGS BY CATEGORY
+═══════════════════════════════════════════════════════════════ */
+    .category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--light-grey);
+      border-left: 4px solid var(--cta);
+      border-radius: 0 4px 4px 0;
+      padding: 3.5mm 4mm;
+      margin-bottom: 4mm;
+    }
+
+    .category-header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5mm;
+    }
+
+    .category-name {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 11pt;
+      color: var(--hero-bg);
+      text-transform: capitalize;
+    }
+
+    .category-name-slug {
+      font-family: var(--font-mono);
+      font-size: 7pt;
+      color: var(--text-muted);
+    }
+
+    .category-score-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--hero-bg);
+      color: var(--white);
+      border-radius: 4px;
+      padding: 2.5mm 4mm;
+      min-width: 18mm;
+    }
+
+    .category-score-num {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 16pt;
+      line-height: 1;
+    }
+
+    .category-score-label {
+      font-family: var(--font-body);
+      font-size: 6.5pt;
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* mono code value in findings table */
+    .mono-val {
+      font-family: var(--font-mono);
+      font-size: 7.5pt;
+      color: var(--text-primary);
+      word-break: break-all;
+    }
+
+    .findings-table td:nth-child(1) {
+      width: 16mm;
+    }
+
+    /* Control ID */
+    .findings-table td:nth-child(3) {
+      width: 16mm;
+    }
+
+    /* Status */
+    .findings-table td:nth-child(4) {
+      width: 16mm;
+    }
+
+    /* Severity */
+    .findings-table td:nth-child(5) {
+      width: 28mm;
+    }
+
+    /* Current */
+    .findings-table td:nth-child(6) {
+      width: 28mm;
+    }
+
+    /* Target */
+
+    /* license-blocked indicator */
+    .license-blocked-note {
+      font-family: var(--font-body);
+      font-size: 7pt;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 1mm;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+   FINAL PAGE — METHODOLOGY & DISCLAIMER
+═══════════════════════════════════════════════════════════════ */
+    .method-section {
+      margin-bottom: 7mm;
+    }
+
+    .method-section-title {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 10pt;
+      color: var(--hero-bg);
+      margin-bottom: 2.5mm;
+    }
+
+    .method-section-body {
+      font-family: var(--font-body);
+      font-size: 9pt;
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    .method-section-body p+p {
+      margin-top: 2mm;
+    }
+
+    .scoring-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3mm;
+      margin-top: 3mm;
+    }
+
+    .scoring-item {
+      background: var(--light-grey);
+      border-radius: 4px;
+      padding: 3mm 4mm;
+    }
+
+    .scoring-item-label {
+      font-family: var(--font-heading);
+      font-size: 8pt;
+      font-weight: 600;
+      color: var(--hero-bg);
+      margin-bottom: 1mm;
+    }
+
+    .scoring-item-desc {
+      font-family: var(--font-body);
+      font-size: 7.5pt;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    .disclaimer-box {
+      background: var(--fail-bg);
+      border: 1px solid var(--fail-border);
+      border-radius: 4px;
+      padding: 4mm 5mm;
+      margin-top: 5mm;
+    }
+
+    .disclaimer-box-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 9pt;
+      color: var(--fail-text);
+      margin-bottom: 2mm;
+    }
+
+    .disclaimer-box-text {
+      font-family: var(--font-body);
+      font-size: 8pt;
+      color: var(--text-primary);
+      line-height: 1.55;
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 3mm;
+      margin-top: 4mm;
+    }
+
+    .contact-item {
+      background: var(--light-grey);
+      border-radius: 4px;
+      padding: 3mm 4mm;
+    }
+
+    .contact-item-label {
+      font-family: var(--font-heading);
+      font-size: 7.5pt;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 1mm;
+    }
+
+    .contact-item-value {
+      font-family: var(--font-body);
+      font-size: 8.5pt;
+      color: var(--hero-bg);
+      font-weight: 500;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+   PRINT-ONLY OVERRIDES
+═══════════════════════════════════════════════════════════════ */
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+
+      .page {
+        page-break-before: always;
+        page-break-inside: avoid;
+      }
+
+      .page:first-child {
+        page-break-before: auto;
+      }
+
+      /* Keep category sections from orphaning */
+      .category-header {
+        page-break-after: avoid;
+      }
+
+      thead {
+        display: table-header-group;
+      }
+
+      tr {
+        page-break-inside: avoid;
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+   SCREEN PREVIEW HELPERS (hidden in print)
+═══════════════════════════════════════════════════════════════ */
+    @media screen {
+      body {
+        background: #888;
+        padding: 10mm;
+      }
+
+      .page {
+        display: block;
+        margin: 0 auto 10mm;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+     PAGE 2/3 ADDITIONS — Secure Score Summary + Static Charts
+  ═══════════════════════════════════════════════════════════════ */
+
+    .summary-lede {
+      font-family: var(--font-body);
+      font-size: 10.2pt;
+      line-height: 1.65;
+      color: var(--text-primary);
+      margin-bottom: 5mm;
+    }
+
+    .summary-lede strong {
+      color: var(--hero-bg);
+    }
+
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3mm;
+      margin: 5mm 0 6mm;
+    }
+
+    .metric-card {
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 3.5mm;
+      background: var(--white);
+    }
+
+    .metric-label {
+      display: block;
+      font-size: 6.8pt;
+      font-weight: 700;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.5mm;
+    }
+
+    .metric-value {
+      display: block;
+      font-family: var(--font-heading);
+      font-size: 17pt;
+      font-weight: 700;
+      color: var(--hero-bg);
+      line-height: 1;
+    }
+
+    .metric-value.good {
+      color: var(--pass-text);
+    }
+
+    .metric-value.warn {
+      color: #f59e0b;
+    }
+
+    .metric-sub {
+      display: block;
+      font-size: 7.3pt;
+      color: var(--text-muted);
+      margin-top: 1.5mm;
+      line-height: 1.35;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 5mm;
+      margin-top: 5mm;
+    }
+
+    .summary-panel {
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 4mm;
+      background: var(--white);
+    }
+
+    .summary-panel-title {
+      font-family: var(--font-heading);
+      font-size: 9pt;
+      font-weight: 700;
+      color: var(--hero-bg);
+      margin-bottom: 2.5mm;
+    }
+
+    .summary-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 2.3mm;
+    }
+
+    .summary-list li {
+      font-size: 8.5pt;
+      line-height: 1.45;
+      color: var(--text-primary);
+      padding-left: 4mm;
+      position: relative;
+    }
+
+    .summary-list li::before {
+      content: "";
+      width: 1.7mm;
+      height: 1.7mm;
+      border-radius: 50%;
+      background: var(--cta);
+      position: absolute;
+      left: 0;
+      top: 1.7mm;
+    }
+
+    .mini-table td:first-child {
+      font-weight: 700;
+      color: var(--hero-bg);
+      width: 48%;
+    }
+
+    .chart-page-intro {
+      font-size: 9pt;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 4mm;
+    }
+
+    .chart-frame {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--white);
+      overflow: hidden;
+      margin-bottom: 4mm;
+    }
+
+    .chart-frame-header {
+      background: var(--hero-bg);
+      color: var(--white);
+      padding: 3mm 4mm;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chart-frame-title {
+      font-family: var(--font-heading);
+      font-size: 9pt;
+      font-weight: 700;
+    }
+
+    .chart-frame-meta {
+      font-family: var(--font-mono);
+      font-size: 7pt;
+      color: var(--cta);
+    }
+
+    .svg-chart {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: #fbfcfd;
+    }
+
+    .chart-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4mm;
+      margin-bottom: 4mm;
+    }
+
+    .chart-caption {
+      padding: 2.5mm 4mm 3mm;
+      font-size: 7.8pt;
+      color: var(--text-muted);
+      line-height: 1.45;
+      border-top: 1px solid var(--border);
+      background: var(--white);
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 4mm;
+      align-items: center;
+      font-size: 7.5pt;
+      color: var(--text-muted);
+      margin-top: 2mm;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 1.5mm;
+    }
+
+    .legend-swatch {
+      width: 8mm;
+      height: 2px;
+      display: inline-block;
+      background: var(--cta);
+    }
+
+    .legend-swatch.magenta {
+      background: var(--brand-pink);
+    }
+
+    .legend-swatch.navy {
+      background: var(--hero-bg);
+    }
+
+    .trend-callout-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3mm;
+      margin-top: 4mm;
+    }
+
+    .trend-callout {
+      background: var(--light-grey);
+      border-left: 3px solid var(--cta);
+      border-radius: 0 4px 4px 0;
+      padding: 3mm;
+    }
+
+    .trend-callout strong {
+      display: block;
+      font-family: var(--font-heading);
+      font-size: 8pt;
+      color: var(--hero-bg);
+      margin-bottom: 1mm;
+    }
+
+    .trend-callout span {
+      display: block;
+      font-size: 7.5pt;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+     PAGES 4+ ADDITIONS
+  ═══════════════════════════════════════════════════════════════ */
+
+    .opportunity-summary {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 5mm;
+      margin-bottom: 5mm;
+    }
+
+    .opportunity-copy {
+      font-size: 9pt;
+      line-height: 1.55;
+      color: var(--text-primary);
+    }
+
+    .opportunity-copy p+p {
+      margin-top: 2.5mm;
+    }
+
+    .score-stack-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--white);
+      padding: 4mm;
+    }
+
+    .score-stack-title {
+      font-family: var(--font-heading);
+      font-size: 9pt;
+      font-weight: 700;
+      color: var(--hero-bg);
+      margin-bottom: 3mm;
+    }
+
+    .score-stack-total {
+      display: flex;
+      align-items: baseline;
+      gap: 2mm;
+    }
+
+    .score-stack-number {
+      font-family: var(--font-heading);
+      font-size: 24pt;
+      font-weight: 700;
+      color: var(--hero-bg);
+      line-height: 1;
+    }
+
+    .score-stack-label {
+      font-size: 8pt;
+      color: var(--text-muted);
+    }
+
+    .score-stack-bar {
+      margin-top: 3mm;
+      height: 7mm;
+      border-radius: 20px;
+      background: var(--light-grey);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .score-stack-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cta), var(--brand-pink));
+      width: 63.4%;
+    }
+
+    .score-stack-note {
+      font-size: 7.5pt;
+      color: var(--text-muted);
+      margin-top: 2mm;
+      line-height: 1.4;
+    }
+
+    .opp-table td:nth-child(1) {
+      width: 38mm;
+    }
+
+    .opp-table td:nth-child(2),
+    .opp-table td:nth-child(3),
+    .opp-table td:nth-child(4) {
+      width: 18mm;
+      white-space: nowrap;
+    }
+
+    .opp-bar {
+      width: 100%;
+      height: 5mm;
+      background: var(--light-grey);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .opp-bar-fill {
+      height: 100%;
+      background: var(--cta);
+      border-radius: 20px;
+    }
+
+    .opp-bar-fill.warn {
+      background: #f59e0b;
+    }
+
+    .opp-bar-fill.danger {
+      background: #ef4444;
+    }
+
+    .priority-box-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3mm;
+      margin-top: 5mm;
+    }
+
+    .priority-box {
+      background: var(--light-grey);
+      border-radius: 5px;
+      padding: 3.5mm;
+      border-left: 3px solid var(--cta);
+    }
+
+    .priority-box.danger {
+      border-left-color: #ef4444;
+    }
+
+    .priority-box.warn {
+      border-left-color: #f59e0b;
+    }
+
+    .priority-box-title {
+      font-family: var(--font-heading);
+      font-size: 8.2pt;
+      font-weight: 700;
+      color: var(--hero-bg);
+      margin-bottom: 1.5mm;
+    }
+
+    .priority-box-text {
+      font-size: 7.6pt;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .rec-table-compact {
+      font-size: 7.8pt;
+    }
+
+    .rec-table-compact th {
+      font-size: 6.7pt;
+      padding: 2.4mm 2.6mm;
+    }
+
+    .rec-table-compact td {
+      padding: 2.2mm 2.6mm;
+      line-height: 1.35;
+    }
+
+    .cost-low,
+    .impact-low {
+      color: #15803d;
+      font-weight: 700;
+    }
+
+    .cost-mod,
+    .impact-mod {
+      color: #f59e0b;
+      font-weight: 700;
+    }
+
+    .cost-high,
+    .impact-high {
+      color: #dc2626;
+      font-weight: 700;
+    }
+
+    .remediation-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 3.2mm;
+    }
+
+    .remediation-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--white);
+      overflow: hidden;
+    }
+
+    .remediation-card-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 4mm;
+      background: var(--light-grey);
+      border-bottom: 1px solid var(--border);
+      padding: 3mm 3.5mm;
+    }
+
+    .remediation-title {
+      font-family: var(--font-heading);
+      font-size: 8.8pt;
+      font-weight: 700;
+      color: var(--hero-bg);
+      line-height: 1.25;
+    }
+
+    .remediation-meta {
+      display: flex;
+      gap: 1.5mm;
+      align-items: flex-start;
+      flex-shrink: 0;
+    }
+
+    .remediation-body {
+      padding: 3mm 3.5mm;
+      display: grid;
+      grid-template-columns: 1fr 1fr 0.9fr;
+      gap: 3mm;
+    }
+
+    .remediation-block-title {
+      font-family: var(--font-heading);
+      font-size: 7.2pt;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 1mm;
+    }
+
+    .remediation-block-text {
+      font-size: 7.5pt;
+      line-height: 1.45;
+      color: var(--text-primary);
+    }
+
+    .timeline-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2.5mm;
+      margin: 4mm 0 5mm;
+    }
+
+    .timeline-step {
+      background: var(--light-grey);
+      border-radius: 5px;
+      padding: 3mm;
+      border-top: 3px solid var(--cta);
+    }
+
+    .timeline-step strong {
+      display: block;
+      font-family: var(--font-heading);
+      font-size: 8pt;
+      color: var(--hero-bg);
+      margin-bottom: 1mm;
+    }
+
+    .timeline-step span {
+      display: block;
+      font-size: 7.4pt;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    .method-note {
+      background: var(--light-grey);
+      border-radius: 5px;
+      padding: 3.5mm 4mm;
+      font-size: 8.2pt;
+      color: var(--text-primary);
+      line-height: 1.5;
+      margin-top: 3mm;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ═══════════════════════════════════════════════════════════
+     PAGE 1 — COVER
+═══════════════════════════════════════════════════════════════ -->
+  <section class="page cover" id="cover">
+    <!-- Header -->
+    <div class="cover-header">
+      <div class="cover-logo-wordmark">
+        <span class="cover-logo-intuity">intuity</span>
+        <span class="cover-logo-tech">Technologies</span>
+      </div>
+      <span class="cover-confidential-badge">Confidential</span>
+    </div>
+
+    <div class="cover-stripe"></div>
+
+    <!-- Body -->
+    <div class="cover-body">
+      <div class="cover-eyebrow">Microsoft Secure Score</div>
+      <div class="cover-title">Quarterly Secure Score <br />Report</div>
+      <div class="cover-subtitle">Contoso Holdings Ltd</div>
+
+      <div class="cover-meta">
+        <div class="cover-meta-row">
+          <span class="cover-meta-label">Tenant ID</span>
+          <span class="cover-meta-value"
+            style="font-family: var(--font-mono); font-size: 8.5pt">a1b2c3d4-e5f6-7890-abcd-ef1234567890</span>
+        </div>
+        <div class="cover-meta-row">
+          <span class="cover-meta-label">Generated</span>
+          <span class="cover-meta-value">13 May 2026</span>
+        </div>
+        <div class="cover-meta-row">
+          <span class="cover-meta-label">Period</span>
+          <span class="cover-meta-value" style="font-family: var(--font-mono); font-size: 8.5pt">13 Feb 2026 – 13 May
+            2026</span>
+        </div>
+        <div class="cover-meta-row">
+          <span class="cover-meta-label">Prepared by</span>
+          <span class="cover-meta-value">Intuity Technologies</span>
+        </div>
+      </div>
+
+      <!-- Score gauge -->
+      <div class="cover-score-area">
+        <div class="score-gauge" id="cover-gauge">
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle class="score-gauge-track" cx="50" cy="50" r="42" />
+            <circle class="score-gauge-fill" id="gauge-fill" cx="50" cy="50" r="42" stroke="#ef4444"
+              stroke-dasharray="263.9" stroke-dashoffset="100.28" />
+          </svg>
+          <div class="score-gauge-inner">
+            <span class="score-number">63.4</span>
+            <span class="score-denom">/ 100</span>
+          </div>
+        </div>
+
+        <div class="score-band-info">
+          <span class="score-band-label band-significant_gaps">Significant Gaps</span>
+          <span class="score-band-desc">
+            63.5% (+17%) represents a significant, high-impact improvement in
+            Contoso Holdings Ltd's security posture.<br />
+            This trajectory indicates proactive, successful remediation of
+            critical vulnerabilities over the past six months.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="cover-footer">
+      <span class="cover-footer-center">
+        This report is confidential and intended solely for the named
+        recipient organisation. Distribution or reproduction requires written
+        consent from Intuity Technologies.
+      </span>
+      <span class="cover-footer-right">intuity.ie</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+   PAGE 2 — EXECUTIVE SUMMARY
+═══════════════════════════════════════════════════════════════ -->
+  <section class="page" id="exec-summary">
+    <div class="page-header-bar">
+      <h1>Executive Summary</h1>
+      <div class="page-header-right">
+        <span class="page-header-tenant">Contoso Holdings Ltd</span>
+        <span class="page-header-date">2026-05-13</span>
+      </div>
+    </div>
+
+    <div class="page-inner exec-summary-body">
+      <p class="summary-lede">
+        Over the reporting period from <strong>13 February 2026</strong> to
+        <strong>13 May 2026</strong>, <strong>Contoso Holdings Ltd</strong> improved its
+        Microsoft Secure Score from <strong>47%</strong> to <strong>63.4%</strong>,
+        reaching <strong>634 / 1,000 points</strong>. This represents a
+        <strong>+16.4 percentage point increase</strong> across the 90-day review window.
+      </p>
+
+      <p class="summary-lede">
+        The trend is positive and statistically consistent, with a linear R² of
+        <strong>0.847</strong>. This indicates that the improvement pattern is unlikely to
+        be random drift and instead reflects deliberate control activation, policy rollout,
+        and remediation activity across the tenant.
+      </p>
+
+      <div class="metric-strip">
+        <div class="metric-card">
+          <span class="metric-label">Current Score</span>
+          <span class="metric-value">63.4%</span>
+          <span class="metric-sub">634 / 1,000 points</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="metric-label">Score Movement</span>
+          <span class="metric-value good">+16.4</span>
+          <span class="metric-sub">percentage points gained</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="metric-label">Trend Strength</span>
+          <span class="metric-value">0.847</span>
+          <span class="metric-sub">linear R² correlation</span>
+        </div>
+
+        <div class="metric-card">
+          <span class="metric-label">Positive Days</span>
+          <span class="metric-value warn">69%</span>
+          <span class="metric-sub">61 of 89 daily changes</span>
+        </div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-panel">
+          <div class="summary-panel-title">Management Summary</div>
+          <ul class="summary-list">
+            <li>
+              The tenant is improving at a healthy rate, with several visible step-changes
+              linked to security policy activation milestones.
+            </li>
+            <li>
+              Multi-factor authentication coverage increased substantially during the
+              period, reducing the tenant’s exposure to credential-based attacks.
+            </li>
+            <li>
+              Legacy authentication controls were activated across mailboxes, removing a
+              common bypass route for MFA and Conditional Access controls.
+            </li>
+            <li>
+              Risky sign-in reviews are now being actioned within SLA, improving operational
+              response to suspicious authentication activity.
+            </li>
+            <li>
+              Remaining gaps are concentrated in endpoint compliance, privileged identity
+              management, OAuth app review, and DLP coverage for SharePoint and OneDrive.
+            </li>
+          </ul>
+        </div>
+
+        <div class="summary-panel">
+          <div class="summary-panel-title">Score Statistics</div>
+          <table class="mini-table">
+            <tbody>
+              <tr>
+                <td>Average score</td>
+                <td>55.8%</td>
+              </tr>
+              <tr>
+                <td>Median score</td>
+                <td>56.1%</td>
+              </tr>
+              <tr>
+                <td>Best score</td>
+                <td>63.4%</td>
+              </tr>
+              <tr>
+                <td>Worst score</td>
+                <td>46.9%</td>
+              </tr>
+              <tr>
+                <td>Volatility</td>
+                <td>4.72%</td>
+              </tr>
+              <tr>
+                <td>Data points</td>
+                <td>90</td>
+              </tr>
+              <tr>
+                <td>Significant events</td>
+                <td>4 detected</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="band-callout">
+        <div class="band-callout-title">Secure Score Position: Significant Gaps</div>
+        <div class="band-callout-text">
+          The tenant has moved materially in the right direction, but the current score
+          still leaves several high-value controls unfinished. Intuity recommends focusing
+          the next remediation phase on Privileged Identity Management, device compliance,
+          Defender for Endpoint onboarding, DLP enforcement, and risky OAuth permission
+          reviews.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">
+        Intuity Technologies — Microsoft Secure Score Report — Contoso Holdings Ltd
+      </span>
+      <span class="page-footer-right">CONFIDENTIAL · Page 2</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+   PAGE 3 — TREND ANALYSIS
+═══════════════════════════════════════════════════════════════ -->
+  <section class="page" id="trend-analysis">
+    <div class="page-header-bar">
+      <h1>Trend Analysis</h1>
+      <div class="page-header-right">
+        <span class="page-header-tenant">Contoso Holdings Ltd</span>
+        <span class="page-header-date">2026-05-13</span>
+      </div>
+    </div>
+
+    <div class="page-inner">
+      <div class="section-title">90-Day Secure Score Movement</div>
+
+      <p class="chart-page-intro">
+        The charts below summarise the tenant’s Secure Score movement across the 90-day
+        reporting period. The score increased from 47% to 63.4%, with the most visible
+        gains occurring after MFA enforcement, legacy authentication blocking, and Intune
+        enrolment activity.
+      </p>
+
+      <!-- Main trend chart -->
+      <div class="chart-frame">
+        <div class="chart-frame-header">
+          <span class="chart-frame-title">Secure Score Trend (% of Maximum)</span>
+          <span class="chart-frame-meta">13 Feb 2026 – 13 May 2026</span>
+        </div>
+
+        <svg class="svg-chart" viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" role="img"
+          aria-label="Secure Score trend chart from 47 percent to 63.4 percent">
+          <defs>
+            <linearGradient id="scoreFill" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#3abfcf" stop-opacity="0.28" />
+              <stop offset="100%" stop-color="#3abfcf" stop-opacity="0.02" />
+            </linearGradient>
+          </defs>
+
+          <!-- chart background -->
+          <rect x="0" y="0" width="760" height="260" fill="#fbfcfd" />
+
+          <!-- grid -->
+          <g stroke="#e5e7eb" stroke-width="1">
+            <line x1="60" y1="40" x2="730" y2="40" />
+            <line x1="60" y1="80" x2="730" y2="80" />
+            <line x1="60" y1="120" x2="730" y2="120" />
+            <line x1="60" y1="160" x2="730" y2="160" />
+            <line x1="60" y1="200" x2="730" y2="200" />
+          </g>
+
+          <!-- y labels -->
+          <g font-family="Lato, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end">
+            <text x="52" y="44">70%</text>
+            <text x="52" y="84">65%</text>
+            <text x="52" y="124">60%</text>
+            <text x="52" y="164">55%</text>
+            <text x="52" y="204">50%</text>
+          </g>
+
+          <!-- milestone markers -->
+          <g stroke="#e4007c" stroke-width="1.2" stroke-dasharray="5 5" opacity="0.45">
+            <line x1="170" y1="35" x2="170" y2="205" />
+            <line x1="306" y1="35" x2="306" y2="205" />
+            <line x1="510" y1="35" x2="510" y2="205" />
+          </g>
+
+          <g font-family="Lato, Arial, sans-serif" font-size="10" fill="#6b7280">
+            <text x="170" y="224" text-anchor="middle">MFA</text>
+            <text x="306" y="224" text-anchor="middle">Legacy auth</text>
+            <text x="510" y="224" text-anchor="middle">Intune</text>
+          </g>
+
+          <!-- area -->
+          <path
+            d="M60,222 L95,214 L130,211 L170,178 L210,174 L250,166 L306,140 L350,137 L394,132 L438,125 L510,101 L560,96 L610,88 L660,77 L730,66 L730,210 L60,210 Z"
+            fill="url(#scoreFill)" />
+
+          <!-- daily score line -->
+          <path
+            d="M60,222 L95,214 L130,211 L170,178 L210,174 L250,166 L306,140 L350,137 L394,132 L438,125 L510,101 L560,96 L610,88 L660,77 L730,66"
+            fill="none" stroke="#1b4d62" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+
+          <!-- moving average -->
+          <path
+            d="M60,218 L95,213 L130,207 L170,185 L210,176 L250,166 L306,148 L350,139 L394,132 L438,124 L510,109 L560,98 L610,90 L660,80 L730,68"
+            fill="none" stroke="#3abfcf" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+          <!-- linear trend -->
+          <path d="M60,210 L730,72" fill="none" stroke="#e4007c" stroke-width="2" stroke-dasharray="8 6"
+            stroke-linecap="round" />
+
+          <!-- start / end labels -->
+          <g font-family="Poppins, Arial, sans-serif" font-weight="700">
+            <circle cx="60" cy="222" r="4" fill="#1b4d62" />
+            <text x="70" y="226" font-size="12" fill="#1b4d62">47%</text>
+
+            <circle cx="730" cy="66" r="4" fill="#3abfcf" />
+            <text x="690" y="56" font-size="12" fill="#1b4d62">63.4%</text>
+          </g>
+
+          <!-- x labels -->
+          <g font-family="Lato, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle">
+            <text x="60" y="246">13 Feb</text>
+            <text x="196" y="246">01 Mar</text>
+            <text x="332" y="246">17 Mar</text>
+            <text x="468" y="246">02 Apr</text>
+            <text x="604" y="246">28 Apr</text>
+            <text x="730" y="246">13 May</text>
+          </g>
+        </svg>
+
+        <div class="chart-caption">
+          Secure Score increased by 16.4 percentage points during the period. The strongest
+          gains align with policy activation events rather than gradual background drift.
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-swatch navy"></span>Daily score</span>
+            <span class="legend-item"><span class="legend-swatch"></span>7-day average</span>
+            <span class="legend-item"><span class="legend-swatch magenta"></span>Linear trend</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-grid-2">
+        <!-- Distribution chart -->
+        <div class="chart-frame">
+          <div class="chart-frame-header">
+            <span class="chart-frame-title">Score Distribution</span>
+            <span class="chart-frame-meta">90 points</span>
+          </div>
+
+          <svg class="svg-chart" viewBox="0 0 365 170" xmlns="http://www.w3.org/2000/svg" role="img"
+            aria-label="Secure Score distribution chart">
+            <rect x="0" y="0" width="365" height="170" fill="#fbfcfd" />
+
+            <g stroke="#e5e7eb" stroke-width="1">
+              <line x1="42" y1="28" x2="340" y2="28" />
+              <line x1="42" y1="62" x2="340" y2="62" />
+              <line x1="42" y1="96" x2="340" y2="96" />
+              <line x1="42" y1="130" x2="340" y2="130" />
+            </g>
+
+            <g fill="#3abfcf">
+              <rect x="54" y="112" width="26" height="18" rx="2" />
+              <rect x="88" y="92" width="26" height="38" rx="2" />
+              <rect x="122" y="66" width="26" height="64" rx="2" />
+              <rect x="156" y="48" width="26" height="82" rx="2" />
+              <rect x="190" y="38" width="26" height="92" rx="2" />
+              <rect x="224" y="54" width="26" height="76" rx="2" />
+              <rect x="258" y="76" width="26" height="54" rx="2" />
+              <rect x="292" y="98" width="26" height="32" rx="2" />
+            </g>
+
+            <line x1="185" y1="24" x2="185" y2="132" stroke="#e4007c" stroke-width="2" stroke-dasharray="5 4" />
+            <line x1="198" y1="24" x2="198" y2="132" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 4" />
+
+            <g font-family="Lato, Arial, sans-serif" font-size="9" fill="#6b7280" text-anchor="middle">
+              <text x="54" y="151">44%</text>
+              <text x="122" y="151">50%</text>
+              <text x="190" y="151">56%</text>
+              <text x="258" y="151">62%</text>
+              <text x="326" y="151">68%</text>
+            </g>
+
+            <g font-family="Lato, Arial, sans-serif" font-size="9">
+              <text x="48" y="18" fill="#e4007c">Mean 55.8%</text>
+              <text x="126" y="18" fill="#f59e0b">Median 56.1%</text>
+            </g>
+          </svg>
+
+          <div class="chart-caption">
+            Scores clustered around the mid-to-high 50s before later remediation pushed the
+            tenant into the low 60s.
+          </div>
+        </div>
+
+        <!-- Daily change chart -->
+        <div class="chart-frame">
+          <div class="chart-frame-header">
+            <span class="chart-frame-title">Daily Score Changes</span>
+            <span class="chart-frame-meta">+ / - movement</span>
+          </div>
+
+          <svg class="svg-chart" viewBox="0 0 365 170" xmlns="http://www.w3.org/2000/svg" role="img"
+            aria-label="Daily Secure Score changes chart">
+            <rect x="0" y="0" width="365" height="170" fill="#fbfcfd" />
+
+            <line x1="34" y1="84" x2="340" y2="84" stroke="#1b4d62" stroke-width="1.2" />
+
+            <g fill="#3abfcf">
+              <rect x="42" y="72" width="5" height="12" />
+              <rect x="53" y="68" width="5" height="16" />
+              <rect x="64" y="74" width="5" height="10" />
+              <rect x="75" y="62" width="5" height="22" />
+              <rect x="86" y="58" width="5" height="26" />
+              <rect x="108" y="38" width="5" height="46" />
+              <rect x="130" y="70" width="5" height="14" />
+              <rect x="152" y="52" width="5" height="32" />
+              <rect x="174" y="66" width="5" height="18" />
+              <rect x="196" y="44" width="5" height="40" />
+              <rect x="218" y="64" width="5" height="20" />
+              <rect x="240" y="56" width="5" height="28" />
+              <rect x="262" y="68" width="5" height="16" />
+              <rect x="284" y="60" width="5" height="24" />
+              <rect x="306" y="72" width="5" height="12" />
+              <rect x="328" y="66" width="5" height="18" />
+            </g>
+
+            <g fill="#e4007c">
+              <rect x="97" y="84" width="5" height="15" />
+              <rect x="119" y="84" width="5" height="8" />
+              <rect x="141" y="84" width="5" height="11" />
+              <rect x="163" y="84" width="5" height="9" />
+              <rect x="185" y="84" width="5" height="14" />
+              <rect x="207" y="84" width="5" height="7" />
+              <rect x="229" y="84" width="5" height="12" />
+              <rect x="251" y="84" width="5" height="20" />
+              <rect x="273" y="84" width="5" height="8" />
+              <rect x="295" y="84" width="5" height="10" />
+              <rect x="317" y="84" width="5" height="7" />
+            </g>
+
+            <g font-family="Lato, Arial, sans-serif" font-size="9" fill="#6b7280">
+              <text x="22" y="42" text-anchor="end">+4</text>
+              <text x="22" y="88" text-anchor="end">0</text>
+              <text x="22" y="124" text-anchor="end">-4</text>
+            </g>
+
+            <g font-family="Lato, Arial, sans-serif" font-size="9" fill="#6b7280" text-anchor="middle">
+              <text x="42" y="151">Feb</text>
+              <text x="134" y="151">Mar</text>
+              <text x="230" y="151">Apr</text>
+              <text x="326" y="151">May</text>
+            </g>
+          </svg>
+
+          <div class="chart-caption">
+            Positive movement outweighed regression days, with 61 positive changes and 28
+            declines recorded across the review window.
+          </div>
+        </div>
+      </div>
+
+      <div class="trend-callout-row">
+        <div class="trend-callout">
+          <strong>Largest gain</strong>
+          <span>MFA and Conditional Access activity created the most visible upward step-change.</span>
+        </div>
+        <div class="trend-callout">
+          <strong>Main regression</strong>
+          <span>A brief late-period dip was observed before the score recovered to the period high.</span>
+        </div>
+        <div class="trend-callout">
+          <strong>Next opportunity</strong>
+          <span>Endpoint compliance, PIM, and DLP remain the strongest score improvement areas.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">
+        Intuity Technologies — Microsoft Secure Score Report — Contoso Holdings Ltd
+      </span>
+      <span class="page-footer-right">CONFIDENTIAL · Page 3</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+   PAGE 4 - SCORE OPPORTUNITY BY CATEGORY
+═══════════════════════════════════════════════════════════════ -->
+  <section class="page" id="score-opportunity">
+    <div class="page-header-bar">
+      <h1>Score Opportunity by Category</h1>
+      <div class="page-header-right">
+        <span class="page-header-tenant">Contoso Holdings Ltd</span>
+        <span class="page-header-date">2026-05-13</span>
+      </div>
+    </div>
+
+    <div class="page-inner">
+      <div class="section-title">Where the Remaining Secure Score Points Sit</div>
+
+      <div class="opportunity-summary">
+        <div class="opportunity-copy">
+          <p>
+            Contoso Holdings Ltd currently holds <strong>634 of 1,000 available points</strong>,
+            leaving <strong>366 points</strong> of identified Secure Score improvement opportunity.
+            The largest remaining gains are concentrated in Identity, Device, and Microsoft
+            Information Protection controls.
+          </p>
+          <p>
+            This distribution matters because not all categories carry the same operational risk.
+            Identity and endpoint controls should be prioritised first, as they directly reduce
+            account compromise, privilege escalation, unmanaged device access, and malware exposure.
+          </p>
+        </div>
+
+        <div class="score-stack-card">
+          <div class="score-stack-title">Current Secure Score Position</div>
+          <div class="score-stack-total">
+            <span class="score-stack-number">634</span>
+            <span class="score-stack-label">/ 1,000 points achieved</span>
+          </div>
+          <div class="score-stack-bar">
+            <div class="score-stack-fill"></div>
+          </div>
+          <div class="score-stack-note">
+            Current position: 63.4%. Remaining improvement opportunity: 366 points.
+          </div>
+        </div>
+      </div>
+
+      <table class="opp-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Current</th>
+            <th>Available</th>
+            <th>Remaining</th>
+            <th>Completion</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Identity</strong></td>
+            <td>132</td>
+            <td>220</td>
+            <td>88</td>
+            <td>
+              <div class="opp-bar">
+                <div class="opp-bar-fill danger" style="width:60%;"></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Device</strong></td>
+            <td>98</td>
+            <td>185</td>
+            <td>87</td>
+            <td>
+              <div class="opp-bar">
+                <div class="opp-bar-fill danger" style="width:53%;"></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Apps</strong></td>
+            <td>86</td>
+            <td>130</td>
+            <td>44</td>
+            <td>
+              <div class="opp-bar">
+                <div class="opp-bar-fill warn" style="width:66%;"></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Data</strong></td>
+            <td>49</td>
+            <td>90</td>
+            <td>41</td>
+            <td>
+              <div class="opp-bar">
+                <div class="opp-bar-fill danger" style="width:54%;"></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Infrastructure</strong></td>
+            <td>86</td>
+            <td>115</td>
+            <td>29</td>
+            <td>
+              <div class="opp-bar">
+                <div class="opp-bar-fill" style="width:75%;"></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Compliance</strong></td>
+            <td>46</td>
+            <td>75</td>
+            <td>29</td>
+            <td>
+              <div class="opp-bar">
+                <div class="opp-bar-fill warn" style="width:61%;"></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Microsoft Information Protection</strong></td>
+            <td>137</td>
+            <td>185</td>
+            <td>48</td>
+            <td>
+              <div class="opp-bar">
+                <div class="opp-bar-fill" style="width:74%;"></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="priority-box-grid">
+        <div class="priority-box danger">
+          <div class="priority-box-title">1. Identity First</div>
+          <div class="priority-box-text">
+            Complete MFA enforcement, block legacy authentication, deploy PIM, and separate privileged accounts.
+          </div>
+        </div>
+
+        <div class="priority-box warn">
+          <div class="priority-box-title">2. Endpoint Control</div>
+          <div class="priority-box-text">
+            Increase Intune enrolment, enforce compliance, and complete Defender for Endpoint onboarding.
+          </div>
+        </div>
+
+        <div class="priority-box">
+          <div class="priority-box-title">3. Data Governance</div>
+          <div class="priority-box-text">
+            Expand DLP, sensitivity labelling, audit retention, and external sharing controls.
+          </div>
+        </div>
+      </div>
+
+      <div class="band-callout">
+        <div class="band-callout-title">Interpretation</div>
+        <div class="band-callout-text">
+          The tenant is no longer in an early-stage security posture, but the remaining point
+          opportunity is still material. The next remediation cycle should focus on controls
+          that reduce compromise likelihood first, then move into governance, reporting, and
+          operational maturity.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">
+        Intuity Technologies - Microsoft Secure Score Report - Contoso Holdings Ltd
+      </span>
+      <span class="page-footer-right">CONFIDENTIAL · Page 4</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+   PAGE 5 - SECURITY CONTROL RECOMMENDATIONS
+═══════════════════════════════════════════════════════════════ -->
+  <section class="page" id="control-recommendations">
+    <div class="page-header-bar">
+      <h1>Security Control Recommendations</h1>
+      <div class="page-header-right">
+        <span class="page-header-tenant">Contoso Holdings Ltd</span>
+        <span class="page-header-date">2026-05-13</span>
+      </div>
+    </div>
+
+    <div class="page-inner">
+      <div class="section-title">Prioritised Secure Score Improvement Actions</div>
+
+      <p class="section-intro">
+        The following controls represent the highest-value improvement opportunities identified
+        during this review. They are ordered by a combination of security impact, Secure Score
+        value, implementation effort, user impact, and dependency sequencing.
+      </p>
+
+      <table class="rec-table-compact">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Control</th>
+            <th>Category</th>
+            <th>Pts</th>
+            <th>Severity</th>
+            <th>Cost</th>
+            <th>User Impact</th>
+            <th>Threats Reduced</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Require MFA for all users via Conditional Access</td>
+            <td>Identity</td>
+            <td>9</td>
+            <td><span class="badge badge-critical">Critical</span></td>
+            <td class="cost-low">Low</td>
+            <td class="impact-mod">Moderate</td>
+            <td>Account breach, phishing</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Block legacy authentication protocols</td>
+            <td>Identity</td>
+            <td>7</td>
+            <td><span class="badge badge-critical">Critical</span></td>
+            <td class="cost-low">Low</td>
+            <td class="impact-low">Low</td>
+            <td>Password spray, MFA bypass</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Configure Privileged Identity Management</td>
+            <td>Identity</td>
+            <td>10</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="cost-mod">Moderate</td>
+            <td class="impact-mod">Moderate</td>
+            <td>Privilege escalation</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Separate admin accounts from daily-use accounts</td>
+            <td>Identity</td>
+            <td>5</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="cost-low">Low</td>
+            <td class="impact-mod">Moderate</td>
+            <td>Admin compromise</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Enrol devices in Microsoft Intune MDM</td>
+            <td>Device</td>
+            <td>8</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="cost-mod">Moderate</td>
+            <td class="impact-mod">Moderate</td>
+            <td>Unmanaged device access</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>Enable Microsoft Defender for Endpoint Plan 2</td>
+            <td>Device</td>
+            <td>8</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="cost-high">High</td>
+            <td class="impact-low">Low</td>
+            <td>Malware, data deletion</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>Create DLP policies for SharePoint and OneDrive</td>
+            <td>Data</td>
+            <td>6</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="cost-low">Low</td>
+            <td class="impact-mod">Moderate</td>
+            <td>Data leakage</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>Enable audit log search in Microsoft Purview</td>
+            <td>Compliance</td>
+            <td>5</td>
+            <td><span class="badge badge-medium">Medium</span></td>
+            <td class="cost-low">Low</td>
+            <td class="impact-low">Low</td>
+            <td>Delayed investigation</td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td>Review and restrict risky OAuth app permissions</td>
+            <td>Apps</td>
+            <td>5</td>
+            <td><span class="badge badge-high">High</span></td>
+            <td class="cost-low">Low</td>
+            <td class="impact-low">Low</td>
+            <td>Consent phishing, data access</td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>Configure Azure AD Password Protection for on-premises AD</td>
+            <td>Identity</td>
+            <td>5</td>
+            <td><span class="badge badge-medium">Medium</span></td>
+            <td class="cost-low">Low</td>
+            <td class="impact-low">Low</td>
+            <td>Password cracking</td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td>Enable Self-Service Password Reset</td>
+            <td>Identity</td>
+            <td>4</td>
+            <td><span class="badge badge-medium">Medium</span></td>
+            <td class="cost-low">Low</td>
+            <td class="impact-low">Low</td>
+            <td>Helpdesk dependency</td>
+          </tr>
+          <tr>
+            <td>12</td>
+            <td>Harden external sharing and guest access reviews</td>
+            <td>Collaboration</td>
+            <td>4</td>
+            <td><span class="badge badge-medium">Medium</span></td>
+            <td class="cost-low">Low</td>
+            <td class="impact-low">Low</td>
+            <td>Oversharing, stale access</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="timeline-strip">
+        <div class="timeline-step">
+          <strong>Week 1-2</strong>
+          <span>Identity baseline: MFA, legacy auth, admin account separation.</span>
+        </div>
+        <div class="timeline-step">
+          <strong>Week 3-4</strong>
+          <span>PIM rollout, SSPR, password protection, Conditional Access tuning.</span>
+        </div>
+        <div class="timeline-step">
+          <strong>Week 5-8</strong>
+          <span>Endpoint enrolment, compliance policies, Defender onboarding.</span>
+        </div>
+        <div class="timeline-step">
+          <strong>Week 9-12</strong>
+          <span>DLP, audit, OAuth review, guest access, reporting validation.</span>
+        </div>
+      </div>
+
+      <div class="band-callout">
+        <div class="band-callout-title">Implementation Note</div>
+        <div class="band-callout-text">
+          User-facing controls should be piloted before tenant-wide enforcement. MFA,
+          device compliance, DLP, and access blocking can interrupt users if exception
+          handling, communications, and service-owner approval are skipped.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">
+        Intuity Technologies - Microsoft Secure Score Report - Contoso Holdings Ltd
+      </span>
+      <span class="page-footer-right">CONFIDENTIAL · Page 5</span>
+    </div>
+  </section>
+  <!-- ═══════════════════════════════════════════════════════════
+   PAGE 6 - REMEDIATION PLAYBOOK: IDENTITY AND ACCESS
+═══════════════════════════════════════════════════════════════ -->
+  <section class="page" id="remediation-identity">
+    <div class="page-header-bar">
+      <h1>Remediation Playbook</h1>
+      <div class="page-header-right">
+        <span class="page-header-tenant">Contoso Holdings Ltd</span>
+        <span class="page-header-date">2026-05-13</span>
+      </div>
+    </div>
+
+    <div class="page-inner">
+      <div class="section-title">Identity and Access Controls</div>
+
+      <p class="section-intro">
+        Identity controls should be treated as the first remediation workstream. These
+        actions reduce the probability of account compromise and limit the blast radius
+        when credentials are exposed.
+      </p>
+
+      <div class="remediation-grid">
+        <div class="remediation-card">
+          <div class="remediation-card-header">
+            <div class="remediation-title">1. Require MFA for all users via Conditional Access</div>
+            <div class="remediation-meta">
+              <span class="badge badge-critical">Critical</span>
+              <span class="pill pill-licensed">Licensed</span>
+            </div>
+          </div>
+          <div class="remediation-body">
+            <div>
+              <div class="remediation-block-title">Action</div>
+              <div class="remediation-block-text">
+                Create a Conditional Access policy requiring MFA for all users and all cloud apps.
+                Exclude only approved emergency access accounts.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Implementation Notes</div>
+              <div class="remediation-block-text">
+                Pilot with IT and power users first. Confirm authentication methods registration
+                before wider enforcement.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Validation</div>
+              <div class="remediation-block-text">
+                Review sign-in logs and confirm MFA claims are present for standard and privileged users.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="remediation-card">
+          <div class="remediation-card-header">
+            <div class="remediation-title">2. Block legacy authentication protocols</div>
+            <div class="remediation-meta">
+              <span class="badge badge-critical">Critical</span>
+              <span class="pill pill-licensed">Licensed</span>
+            </div>
+          </div>
+          <div class="remediation-body">
+            <div>
+              <div class="remediation-block-title">Action</div>
+              <div class="remediation-block-text">
+                Block legacy clients including IMAP, POP, SMTP AUTH, and Basic Authentication
+                through Conditional Access and Exchange Online configuration.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Implementation Notes</div>
+              <div class="remediation-block-text">
+                Query sign-in logs for legacy client usage before enforcement. Replace unsupported
+                mail clients or service integrations.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Validation</div>
+              <div class="remediation-block-text">
+                Confirm legacy client sign-ins are blocked and no active mailbox workflows depend on them.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="remediation-card">
+          <div class="remediation-card-header">
+            <div class="remediation-title">3. Configure Privileged Identity Management</div>
+            <div class="remediation-meta">
+              <span class="badge badge-high">High</span>
+              <span class="pill pill-licensed">Licensed</span>
+            </div>
+          </div>
+          <div class="remediation-body">
+            <div>
+              <div class="remediation-block-title">Action</div>
+              <div class="remediation-block-text">
+                Move privileged Entra roles to eligible assignment and require just-in-time
+                activation with MFA, justification, and approval where appropriate.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Implementation Notes</div>
+              <div class="remediation-block-text">
+                Start with Global Administrator, Privileged Role Administrator, Exchange Administrator,
+                SharePoint Administrator, and Security Administrator.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Validation</div>
+              <div class="remediation-block-text">
+                Confirm no unnecessary permanent privileged assignments remain outside break-glass scope.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="remediation-card">
+          <div class="remediation-card-header">
+            <div class="remediation-title">4. Separate admin accounts from daily-use accounts</div>
+            <div class="remediation-meta">
+              <span class="badge badge-high">High</span>
+              <span class="pill pill-licensed">Licensed</span>
+            </div>
+          </div>
+          <div class="remediation-body">
+            <div>
+              <div class="remediation-block-title">Action</div>
+              <div class="remediation-block-text">
+                Create dedicated administrative accounts for privileged work and remove admin roles
+                from standard user accounts.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Implementation Notes</div>
+              <div class="remediation-block-text">
+                Restrict admin accounts from email, Teams, and general browsing. Apply stronger CA
+                requirements to privileged accounts.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Validation</div>
+              <div class="remediation-block-text">
+                Export privileged role assignments and verify no standard productivity accounts retain admin roles.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="remediation-card">
+          <div class="remediation-card-header">
+            <div class="remediation-title">5. Enable Self-Service Password Reset and Password Protection</div>
+            <div class="remediation-meta">
+              <span class="badge badge-medium">Medium</span>
+              <span class="pill pill-licensed">Licensed</span>
+            </div>
+          </div>
+          <div class="remediation-body">
+            <div>
+              <div class="remediation-block-title">Action</div>
+              <div class="remediation-block-text">
+                Enable SSPR for all users and deploy password protection for weak, leaked, or banned password patterns.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Implementation Notes</div>
+              <div class="remediation-block-text">
+                Require two registration methods. Enable writeback for hybrid users where required.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Validation</div>
+              <div class="remediation-block-text">
+                Confirm registration completion, password reset success, and banned password enforcement.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">
+        Intuity Technologies - Microsoft Secure Score Report - Contoso Holdings Ltd
+      </span>
+      <span class="page-footer-right">CONFIDENTIAL · Page 6</span>
+    </div>
+  </section>
+  <!-- ═══════════════════════════════════════════════════════════
+   PAGE 7 - REMEDIATION PLAYBOOK: ENDPOINT, DATA AND APPS
+═══════════════════════════════════════════════════════════════ -->
+  <section class="page" id="remediation-endpoint-data-apps">
+    <div class="page-header-bar">
+      <h1>Remediation Playbook</h1>
+      <div class="page-header-right">
+        <span class="page-header-tenant">Contoso Holdings Ltd</span>
+        <span class="page-header-date">2026-05-13</span>
+      </div>
+    </div>
+
+    <div class="page-inner">
+      <div class="section-title">Endpoint, Data Protection and Application Controls</div>
+
+      <p class="section-intro">
+        Once identity enforcement is stable, the next workstream should close device,
+        data, and application governance gaps. These controls reduce unmanaged access,
+        data leakage, weak auditability, and risky third-party app exposure.
+      </p>
+
+      <div class="remediation-grid">
+        <div class="remediation-card">
+          <div class="remediation-card-header">
+            <div class="remediation-title">6. Enrol devices in Microsoft Intune MDM</div>
+            <div class="remediation-meta">
+              <span class="badge badge-high">High</span>
+              <span class="pill pill-licensed">Licensed</span>
+            </div>
+          </div>
+          <div class="remediation-body">
+            <div>
+              <div class="remediation-block-title">Action</div>
+              <div class="remediation-block-text">
+                Enrol Windows, macOS, iOS, and Android devices into Intune and enforce baseline
+                compliance policies.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Implementation Notes</div>
+              <div class="remediation-block-text">
+                Define compliance rules for encryption, OS version, antivirus, firewall, and device risk.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Validation</div>
+              <div class="remediation-block-text">
+                Confirm devices appear as compliant and block unmanaged access using Conditional Access.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="remediation-card">
+          <div class="remediation-card-header">
+            <div class="remediation-title">7. Enable Microsoft Defender for Endpoint Plan 2</div>
+            <div class="remediation-meta">
+              <span class="badge badge-high">High</span>
+              <span class="pill pill-licensed">Licensed</span>
+            </div>
+          </div>
+          <div class="remediation-body">
+            <div>
+              <div class="remediation-block-title">Action</div>
+              <div class="remediation-block-text">
+                Onboard all supported endpoints into Defender for Endpoint and enable core EDR,
+                antivirus, and attack surface reduction controls.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Implementation Notes</div>
+              <div class="remediation-block-text">
+                Deploy ASR rules in audit mode before enforcement. Tune exclusions with care and owner approval.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Validation</div>
+              <div class="remediation-block-text">
+                Confirm onboarding status, sensor health, antivirus state, and alert generation from test devices.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="remediation-card">
+          <div class="remediation-card-header">
+            <div class="remediation-title">8. Create DLP policies for SharePoint and OneDrive</div>
+            <div class="remediation-meta">
+              <span class="badge badge-high">High</span>
+              <span class="pill pill-licensed">Licensed</span>
+            </div>
+          </div>
+          <div class="remediation-body">
+            <div>
+              <div class="remediation-block-title">Action</div>
+              <div class="remediation-block-text">
+                Create DLP policies targeting sensitive information types such as financial,
+                identity, HR, and customer data.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Implementation Notes</div>
+              <div class="remediation-block-text">
+                Start in simulation mode. Review matches, tune false positives, then enable user notifications.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Validation</div>
+              <div class="remediation-block-text">
+                Test upload, sharing, and external transfer scenarios using controlled sample data.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="remediation-card">
+          <div class="remediation-card-header">
+            <div class="remediation-title">9. Enable audit log search and retention in Microsoft Purview</div>
+            <div class="remediation-meta">
+              <span class="badge badge-medium">Medium</span>
+              <span class="pill pill-licensed">Licensed</span>
+            </div>
+          </div>
+          <div class="remediation-body">
+            <div>
+              <div class="remediation-block-title">Action</div>
+              <div class="remediation-block-text">
+                Confirm unified audit logging is enabled and configure retention aligned to incident
+                response and compliance requirements.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Implementation Notes</div>
+              <div class="remediation-block-text">
+                Create alerting for bulk downloads, external sharing, privilege changes, and suspicious mailbox actions.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Validation</div>
+              <div class="remediation-block-text">
+                Perform known test activities and confirm events are searchable within expected timeframes.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="remediation-card">
+          <div class="remediation-card-header">
+            <div class="remediation-title">10. Review and restrict risky OAuth app permissions</div>
+            <div class="remediation-meta">
+              <span class="badge badge-high">High</span>
+              <span class="pill pill-licensed">Licensed</span>
+            </div>
+          </div>
+          <div class="remediation-body">
+            <div>
+              <div class="remediation-block-title">Action</div>
+              <div class="remediation-block-text">
+                Review enterprise applications and consent grants. Remove unused apps and restrict high-risk
+                permissions.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Implementation Notes</div>
+              <div class="remediation-block-text">
+                Pay close attention to Mail.ReadWrite, Files.ReadWrite.All, Directory.ReadWrite.All,
+                and offline access scopes.
+              </div>
+            </div>
+            <div>
+              <div class="remediation-block-title">Validation</div>
+              <div class="remediation-block-text">
+                Confirm admin consent workflow is enabled and new high-impact permissions require approval.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">
+        Intuity Technologies - Microsoft Secure Score Report - Contoso Holdings Ltd
+      </span>
+      <span class="page-footer-right">CONFIDENTIAL · Page 7</span>
+    </div>
+  </section>
+  <!-- ═══════════════════════════════════════════════════════════
+   FINAL PAGE - METHODOLOGY AND DISCLAIMER
+═══════════════════════════════════════════════════════════════ -->
+  <section class="page" id="methodology-disclaimer">
+    <div class="page-header-bar">
+      <h1>Methodology and Disclaimer</h1>
+      <div class="page-header-right">
+        <span class="page-header-tenant">Contoso Holdings Ltd</span>
+        <span class="page-header-date">2026-05-13</span>
+      </div>
+    </div>
+
+    <div class="page-inner">
+      <div class="method-section">
+        <div class="method-section-title">Assessment Methodology</div>
+        <div class="method-section-body">
+          <p>
+            This report is based on Microsoft Secure Score data, tenant configuration
+            observations, and available Microsoft 365 security control signals at the time
+            of generation. The assessment reviews enabled controls, incomplete improvement
+            actions, control categories, score movement, and prioritised remediation
+            opportunities.
+          </p>
+          <p>
+            Secure Score is used as a directional benchmark for Microsoft 365 security
+            maturity. It should be interpreted alongside operational context, licensing,
+            business requirements, exception handling, and user impact.
+          </p>
+        </div>
+      </div>
+
+      <div class="method-section">
+        <div class="method-section-title">Scoring Interpretation</div>
+        <div class="scoring-grid">
+          <div class="scoring-item">
+            <div class="scoring-item-label">80-100: Strong Position</div>
+            <div class="scoring-item-desc">
+              Core Microsoft 365 security controls are mature, consistently enforced, and
+              actively monitored.
+            </div>
+          </div>
+          <div class="scoring-item">
+            <div class="scoring-item-label">65-79: Improving Position</div>
+            <div class="scoring-item-desc">
+              Security foundation is mostly in place, with remaining medium or high-value
+              controls requiring completion.
+            </div>
+          </div>
+          <div class="scoring-item">
+            <div class="scoring-item-label">40-64: Significant Gaps</div>
+            <div class="scoring-item-desc">
+              Multiple high-value controls remain incomplete. Remediation should be treated
+              as a managed workstream.
+            </div>
+          </div>
+          <div class="scoring-item">
+            <div class="scoring-item-label">0-39: High Exposure</div>
+            <div class="scoring-item-desc">
+              Foundational protections are missing or inconsistently configured. Immediate
+              remediation is recommended.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="method-section">
+        <div class="method-section-title">Assumptions and Scope</div>
+        <div class="method-section-body">
+          <p>
+            The report reflects the Microsoft 365 tenant state available at the time of
+            collection. It does not include manual penetration testing, endpoint forensic
+            review, source code review, identity compromise assessment, firewall review,
+            or third-party SaaS configuration review unless separately stated.
+          </p>
+          <p>
+            Some Secure Score recommendations may require additional licensing, staged
+            rollout, change approval, communications, pilot testing, or exception handling
+            before enforcement.
+          </p>
+        </div>
+
+        <div class="method-note">
+          Recommended remediation sequencing is based on risk reduction and operational
+          practicality. Identity and privileged access controls are prioritised first because
+          they provide the largest reduction in compromise likelihood and tenant-wide blast
+          radius.
+        </div>
+      </div>
+
+      <div class="disclaimer-box">
+        <div class="disclaimer-box-title">Disclaimer</div>
+        <div class="disclaimer-box-text">
+          This report is provided for informational and advisory purposes only. Secure Score
+          is not a guarantee of security, breach prevention, regulatory compliance, or absence
+          of risk. The findings and recommendations should be validated against Contoso
+          Holdings Ltd’s business requirements, licensing position, operational constraints,
+          and internal change control processes before implementation.
+        </div>
+      </div>
+
+      <div class="method-section" style="margin-top: 6mm;">
+        <div class="method-section-title">Contact</div>
+        <div class="contact-grid">
+          <div class="contact-item">
+            <div class="contact-item-label">Prepared By</div>
+            <div class="contact-item-value">Intuity Technologies</div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-item-label">Support</div>
+            <div class="contact-item-value">technicalsupport@intuity.ie</div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-item-label">Website</div>
+            <div class="contact-item-value">intuity.ie</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span class="page-footer-left">
+        Intuity Technologies - Microsoft Secure Score Report - Contoso Holdings Ltd
+      </span>
+      <span class="page-footer-right">CONFIDENTIAL · Final Page</span>
+    </div>
+  </section>
+</body>
+
+</html>
