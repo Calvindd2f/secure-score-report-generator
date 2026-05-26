@@ -217,6 +217,66 @@ def build_trend_stats(json_data, trend_analysis):
     }
 
 
+def compute_weekly_stats(json_data):
+    """Extract stats from the last two score entries for the weekly report."""
+    data = json_data.get('result', [])
+    for item in data:
+        if not isinstance(item.get('date'), datetime):
+            item['date'] = datetime.strptime(
+                item['createdDateTime'].split('T')[0], '%Y-%m-%d'
+            )
+    data_sorted = sorted(data, key=lambda x: x['date'])
+
+    last_week = data_sorted[-2]
+    this_week = data_sorted[-1]
+
+    score_current_pct = round(this_week['currentScore'] / this_week['maxScore'] * 100, 2)
+    score_last_pct    = round(last_week['currentScore'] / last_week['maxScore'] * 100, 2)
+    score_movement    = round(score_current_pct - score_last_pct, 2)
+
+    if score_current_pct >= 80:
+        score_band = 'Cyber Resilient'
+    elif score_current_pct >= 65:
+        score_band = 'Near Ready'
+    elif score_current_pct >= 45:
+        score_band = 'Significant Gaps'
+    else:
+        score_band = 'Critical Risk'
+
+    avg_all_tenants = None
+    for entry in (this_week.get('averageComparativeScores') or []):
+        if entry.get('basis') == 'AllTenants':
+            avg_all_tenants = float(entry['averageScore'])
+            break
+
+    circumference = 2 * math.pi * 42
+    dashoffset    = circumference * (1 - score_current_pct / 100)
+    tenant_id = this_week.get('azureTenantId') or json_data.get('tenant_id', '')
+
+    # Cross-platform day formatting without leading zero
+    raw_label = this_week['date'].strftime('%d %b %Y')
+    week_of_label = raw_label.lstrip('0')
+
+    return {
+        'tenant_name':           json_data.get('tenant_name', 'Customer Tenant'),
+        'tenant_id':             tenant_id,
+        'generated_date':        datetime.now().strftime('%d %b %Y'),
+        'generated_iso':         datetime.now().strftime('%Y-%m-%d'),
+        'week_of_label':         week_of_label,
+        'score_current_pct':     score_current_pct,
+        'score_last_pct':        score_last_pct,
+        'score_movement':        score_movement,
+        'current_score_pts':     int(this_week['currentScore']),
+        'max_score_pts':         int(this_week['maxScore']),
+        'score_band':            score_band,
+        'band_css_class':        _BAND_CSS_MAP.get(score_band, 'significant_gaps'),
+        'band_description':      _BAND_DESC.get(score_band, ''),
+        'gauge_color':           _BAND_GAUGE_COLOR.get(score_band, '#ef4444'),
+        'gauge_dashoffset':      f'{dashoffset:.2f}',
+        'avg_score_all_tenants': avg_all_tenants,
+    }
+
+
 # ---------------------------------------------------------------------------
 # SVG chart coordinate helpers
 # ---------------------------------------------------------------------------
@@ -846,6 +906,34 @@ def render_html_report(json_data, trend_analysis, control_profiles):
     return template.render(**context)
 
 
+def render_weekly_html_report(json_data, control_profiles):
+    """Render the 2-page weekly Jinja2 template."""
+    weekly_stats = compute_weekly_stats(json_data)
+
+    sorted_controls = sorted(
+        control_profiles or [],
+        key=lambda c: c.get('rank') or 9999,
+    )
+    top3 = []
+    for cp in sorted_controls[:3]:
+        sev_css, sev_label = _derive_control_severity(cp)
+        top3.append({**cp, 'severity_css': sev_css, 'severity_label': sev_label})
+
+    context = {
+        **weekly_stats,
+        'controls':        top3,
+        'regression_mode': weekly_stats['score_movement'] < 0,
+    }
+
+    template_dir = os.path.dirname(os.path.abspath(__file__))
+    env = Environment(
+        loader=FileSystemLoader(template_dir),
+        autoescape=False,
+    )
+    template = env.get_template('weekly_template.html')
+    return template.render(**context)
+
+
 # ---------------------------------------------------------------------------
 # Playwright PDF rendering
 # ---------------------------------------------------------------------------
@@ -977,10 +1065,17 @@ document.getElementById('f').onsubmit=async e=>{
         scores = [(item['currentScore'] / item['maxScore']) * 100 for item in data]
         dates  = [item['date'] for item in data]
 
-        trend_analysis = analyze_security_trends(scores, dates)
-        trend_stats    = build_trend_stats(json_data, trend_analysis)
-        html_content   = render_html_report(json_data, trend_analysis, control_profiles)
-        pdf_bytes      = generate_pdf_with_playwright(html_content)
+        report_type = json_data.get('report_type', 'quarterly')
+
+        if report_type == 'weekly':
+            html_content = render_weekly_html_report(json_data, control_profiles)
+            trend_stats  = {}
+        else:
+            trend_analysis = analyze_security_trends(scores, dates)
+            trend_stats    = build_trend_stats(json_data, trend_analysis)
+            html_content   = render_html_report(json_data, trend_analysis, control_profiles)
+
+        pdf_bytes = generate_pdf_with_playwright(html_content)
 
         pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
         response_data = {

@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weekly Secure Score Update — {{ tenant_name }}</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Lato:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+    :root {
+      --hero-bg: #1b4d62;
+      --cta: #3abfcf;
+      --brand-pink: #e4007c;
+      --white: #ffffff;
+      --light-grey: #f2f4f5;
+      --border: #e5e7eb;
+      --text-primary: #2d2d2d;
+      --text-muted: #6b7280;
+      --text-on-dark: #ffffff;
+      --pass-bg: #dcfce7;
+      --pass-text: #15803d;
+      --fail-bg: #fee2e2;
+      --fail-text: #dc2626;
+      --sev-critical-bg: #7f1d1d; --sev-critical-text: #ffffff;
+      --sev-high-bg: #f97316;     --sev-high-text: #ffffff;
+      --sev-medium-bg: #f59e0b;   --sev-medium-text: #1a1a1a;
+      --sev-low-bg: #3b82f6;      --sev-low-text: #ffffff;
+      --sev-info-bg: #e5e7eb;     --sev-info-text: #374151;
+      --font-heading: "Poppins", Arial, sans-serif;
+      --font-body: "Lato", Arial, sans-serif;
+      --font-mono: "JetBrains Mono", Consolas, monospace;
+      --page-w: 210mm;
+      --page-h: 297mm;
+      --gutter: 14mm;
+    }
+
+    @page { size: A4; margin: 0; }
+
+    * {
+      box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      font-family: var(--font-body);
+      color: var(--text-primary);
+      background: var(--white);
+      font-size: 10pt;
+      line-height: 1.55;
+    }
+
+    .page {
+      width: var(--page-w);
+      min-height: var(--page-h);
+      position: relative;
+      overflow: hidden;
+      background: var(--white);
+      page-break-before: always;
+      page-break-inside: avoid;
+    }
+    .page:first-child { page-break-before: auto; }
+
+    /* ── Cover ── */
+    .cover {
+      background: var(--hero-bg);
+      display: flex; flex-direction: column;
+      width: 100%; height: var(--page-h);
+      color: var(--text-on-dark);
+    }
+    .cover-header {
+      padding: 12mm var(--gutter) 8mm;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .cover-logo-wordmark { display: flex; align-items: baseline; }
+    .cover-logo-intuity {
+      font-family: var(--font-heading); font-weight: 700; font-size: 20pt;
+      color: var(--brand-pink); letter-spacing: -0.5px;
+    }
+    .cover-logo-tech {
+      font-family: var(--font-heading); font-weight: 600; font-size: 8pt;
+      color: rgba(255,255,255,0.7); letter-spacing: 3px;
+      text-transform: uppercase; margin-left: 4px; align-self: center;
+    }
+    .cover-confidential-badge {
+      font-family: var(--font-body); font-size: 7pt;
+      color: rgba(255,255,255,0.5); letter-spacing: 1.5px;
+      text-transform: uppercase; border: 1px solid rgba(255,255,255,0.25);
+      padding: 3px 8px; border-radius: 3px;
+    }
+    .cover-stripe {
+      height: 3px;
+      background: linear-gradient(90deg, var(--cta) 0%, var(--brand-pink) 100%);
+    }
+    .cover-body {
+      flex: 1; display: flex; flex-direction: column;
+      justify-content: center; padding: 0 var(--gutter);
+    }
+    .cover-eyebrow {
+      font-family: var(--font-body); font-size: 8pt; font-weight: 700;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--cta); margin-bottom: 6mm;
+    }
+    .cover-title {
+      font-family: var(--font-heading); font-weight: 700; font-size: 30pt;
+      line-height: 1.15; color: var(--white); margin-bottom: 3mm;
+    }
+    .cover-subtitle {
+      font-family: var(--font-heading); font-weight: 600; font-size: 16pt;
+      color: var(--cta); margin-bottom: 10mm;
+    }
+    .cover-meta { display: flex; flex-direction: column; gap: 2mm; margin-bottom: 10mm; }
+    .cover-meta-row { display: flex; align-items: baseline; gap: 6px; }
+    .cover-meta-label {
+      font-family: var(--font-body); font-size: 8pt;
+      color: rgba(255,255,255,0.5); text-transform: uppercase;
+      letter-spacing: 1px; width: 30mm; flex-shrink: 0;
+    }
+    .cover-meta-value {
+      font-family: var(--font-body); font-size: 10pt;
+      color: rgba(255,255,255,0.9); font-weight: 500;
+    }
+    .cover-score-area { display: flex; align-items: center; gap: 10mm; margin-top: 4mm; }
+    .score-gauge { position: relative; width: 44mm; height: 44mm; flex-shrink: 0; }
+    .score-gauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .score-gauge-track { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 8; }
+    .score-gauge-fill { fill: none; stroke-width: 8; stroke-linecap: round; }
+    .score-gauge-inner {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .score-number {
+      font-family: var(--font-heading); font-size: 20pt; font-weight: 700;
+      color: var(--white); line-height: 1;
+    }
+    .score-denom { font-family: var(--font-body); font-size: 7pt; color: rgba(255,255,255,0.5); }
+    .score-band-info { display: flex; flex-direction: column; gap: 2mm; }
+    .score-band-label { font-family: var(--font-heading); font-weight: 600; font-size: 14pt; }
+    .score-band-desc {
+      font-family: var(--font-body); font-size: 9pt;
+      color: rgba(255,255,255,0.65); max-width: 80mm; line-height: 1.45;
+    }
+    .delta-display {
+      margin-top: 4mm; font-family: var(--font-heading);
+      font-size: 22pt; font-weight: 700; line-height: 1;
+    }
+    .delta-display .delta-label {
+      display: block; font-family: var(--font-body); font-size: 8pt;
+      font-weight: 400; color: rgba(255,255,255,0.5);
+      text-transform: uppercase; letter-spacing: 1px; margin-top: 1.5mm;
+    }
+    .delta-positive { color: #22c55e; }
+    .delta-negative { color: #f87171; }
+    .band-cyber_resilient  { color: #22c55e; }
+    .band-near_ready       { color: #f59e0b; }
+    .band-significant_gaps { color: #ef4444; }
+    .band-critical_risk    { color: #fca5a5; }
+    .cover-footer {
+      padding: 6mm var(--gutter); border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .cover-footer-center {
+      font-family: var(--font-mono); font-size: 7pt;
+      color: rgba(255,255,255,0.3); letter-spacing: 0.5px;
+    }
+    .cover-footer-right {
+      font-family: var(--font-mono); font-size: 7pt;
+      color: rgba(255,255,255,0.3); letter-spacing: 0.5px;
+    }
+
+    /* ── Summary page ── */
+    .page-header-bar {
+      background: var(--hero-bg); padding: 5mm var(--gutter) 4mm;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8mm;
+    }
+    .page-header-bar h1 {
+      font-family: var(--font-heading); font-weight: 700; font-size: 13pt; color: var(--white);
+    }
+    .page-header-right { text-align: right; }
+    .page-header-tenant {
+      font-family: var(--font-body); font-size: 8pt;
+      color: rgba(255,255,255,0.7); display: block;
+    }
+    .page-header-date {
+      font-family: var(--font-mono); font-size: 7.5pt; color: var(--cta); display: block;
+    }
+    .page-inner { padding: 0 var(--gutter) 10mm; }
+    .page-footer {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 3mm var(--gutter); border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--white);
+    }
+    .page-footer-left { font-family: var(--font-body); font-size: 7pt; color: var(--text-muted); }
+    .page-footer-right { font-family: var(--font-mono); font-size: 7pt; color: var(--text-muted); }
+    .section-title {
+      font-family: var(--font-heading); font-weight: 700; font-size: 11pt;
+      color: var(--hero-bg); margin-bottom: 4mm; padding-bottom: 2mm;
+      border-bottom: 2px solid var(--cta);
+    }
+
+    /* Metric strip */
+    .metric-strip {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 3mm; margin: 0 0 7mm;
+    }
+    .metric-card {
+      border: 1px solid var(--border); border-radius: 5px;
+      padding: 3.5mm; background: var(--white);
+    }
+    .metric-label {
+      display: block; font-size: 6.8pt; font-weight: 700;
+      letter-spacing: 0.7px; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 1.5mm;
+    }
+    .metric-value {
+      display: block; font-family: var(--font-heading);
+      font-size: 17pt; font-weight: 700; color: var(--hero-bg); line-height: 1;
+    }
+    .metric-value.positive { color: #15803d; }
+    .metric-value.negative { color: #dc2626; }
+    .metric-sub {
+      display: block; font-size: 7.3pt; color: var(--text-muted);
+      margin-top: 1.5mm; line-height: 1.35;
+    }
+
+    /* Regression / stable callout */
+    .alert-callout { border-radius: 0 4px 4px 0; padding: 4mm 5mm; margin-bottom: 7mm; }
+    .alert-callout.regression { background: var(--fail-bg); border-left: 4px solid var(--fail-text); }
+    .alert-callout.stable     { background: var(--pass-bg); border-left: 4px solid var(--pass-text); }
+    .alert-callout-title {
+      font-family: var(--font-heading); font-weight: 700; font-size: 10pt; margin-bottom: 1.5mm;
+    }
+    .alert-callout.regression .alert-callout-title { color: var(--fail-text); }
+    .alert-callout.stable .alert-callout-title     { color: var(--pass-text); }
+    .alert-callout-text {
+      font-family: var(--font-body); font-size: 8.5pt;
+      color: var(--text-primary); line-height: 1.55;
+    }
+
+    /* Control cards */
+    .control-cards { display: flex; flex-direction: column; gap: 3mm; }
+    .control-card {
+      border: 1px solid var(--border); border-radius: 6px;
+      background: var(--white); overflow: hidden;
+    }
+    .control-card-header {
+      background: var(--light-grey); border-bottom: 1px solid var(--border);
+      padding: 3mm 3.5mm; display: flex;
+      align-items: flex-start; justify-content: space-between; gap: 4mm;
+    }
+    .control-rank {
+      font-family: var(--font-heading); font-weight: 700; font-size: 11pt;
+      color: var(--cta); flex-shrink: 0; min-width: 6mm;
+    }
+    .control-title {
+      font-family: var(--font-heading); font-size: 9pt; font-weight: 700;
+      color: var(--hero-bg); flex: 1; line-height: 1.3;
+    }
+    .control-badges { display: flex; gap: 1.5mm; align-items: flex-start; flex-shrink: 0; }
+    .control-card-body {
+      padding: 3mm 3.5mm; display: grid;
+      grid-template-columns: 1fr 1fr 1fr; gap: 3mm;
+    }
+    .control-block-title {
+      font-family: var(--font-heading); font-size: 7pt; font-weight: 700;
+      color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 0.6px; margin-bottom: 1mm;
+    }
+    .control-block-text { font-size: 7.5pt; line-height: 1.45; color: var(--text-primary); }
+    .badge {
+      display: inline-block; padding: 1px 6px; border-radius: 3px;
+      font-family: var(--font-heading); font-size: 7pt; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;
+    }
+    .badge-critical { background: var(--sev-critical-bg); color: var(--sev-critical-text); }
+    .badge-high     { background: var(--sev-high-bg);     color: var(--sev-high-text); }
+    .badge-medium   { background: var(--sev-medium-bg);   color: var(--sev-medium-text); }
+    .badge-low      { background: var(--sev-low-bg);      color: var(--sev-low-text); }
+    .badge-info     { background: var(--sev-info-bg);     color: var(--sev-info-text); }
+    .badge-category {
+      display: inline-block; padding: 1px 6px; border-radius: 3px;
+      font-family: var(--font-body); font-size: 7pt; font-weight: 700;
+      background: rgba(27,77,98,0.1); color: var(--hero-bg);
+      border: 1px solid rgba(27,77,98,0.2); white-space: nowrap;
+    }
+    .no-controls-note {
+      background: var(--light-grey); border-left: 4px solid var(--cta);
+      border-radius: 0 4px 4px 0; padding: 4mm 5mm;
+      font-size: 8.5pt; color: var(--text-muted); line-height: 1.55;
+    }
+
+    @media print {
+      .page { page-break-before: always; page-break-inside: avoid; }
+      .page:first-child { page-break-before: auto; }
+    }
+    @media screen {
+      body { background: #888; padding: 10mm; }
+      .page { display: block; margin: 0 auto 10mm; box-shadow: 0 4px 24px rgba(0,0,0,0.35); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PAGE 1 — COVER -->
+  <section class="page cover" id="cover">
+    <div class="cover-header">
+      <div class="cover-logo-wordmark">
+        <span class="cover-logo-intuity">intuity</span>
+        <span class="cover-logo-tech">Technologies</span>
+      </div>
+      <span class="cover-confidential-badge">Confidential</span>
+    </div>
+    <div class="cover-stripe"></div>
+    <div class="cover-body">
+      <div class="cover-eyebrow">Microsoft Secure Score</div>
+      <div class="cover-title">Weekly Secure Score<br />Update</div>
+      <div class="cover-subtitle">{{ tenant_name }}</div>
+      <div class="cover-meta">
+        <div class="cover-meta-row">
+          <span class="cover-meta-label">Tenant ID</span>
+          <span class="cover-meta-value" style="font-family: var(--font-mono); font-size: 8.5pt">{{ tenant_id if tenant_id else 'N/A' }}</span>
+        </div>
+        <div class="cover-meta-row">
+          <span class="cover-meta-label">Generated</span>
+          <span class="cover-meta-value">{{ generated_date }}</span>
+        </div>
+        <div class="cover-meta-row">
+          <span class="cover-meta-label">Week of</span>
+          <span class="cover-meta-value">{{ week_of_label }}</span>
+        </div>
+        <div class="cover-meta-row">
+          <span class="cover-meta-label">Prepared by</span>
+          <span class="cover-meta-value">Intuity Technologies</span>
+        </div>
+      </div>
+      <div class="cover-score-area">
+        <div class="score-gauge">
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle class="score-gauge-track" cx="50" cy="50" r="42" />
+            <circle class="score-gauge-fill" cx="50" cy="50" r="42"
+              stroke="{{ gauge_color }}"
+              stroke-dasharray="263.9"
+              stroke-dashoffset="{{ gauge_dashoffset }}" />
+          </svg>
+          <div class="score-gauge-inner">
+            <span class="score-number">{{ score_current_pct }}</span>
+            <span class="score-denom">/ 100</span>
+          </div>
+        </div>
+        <div class="score-band-info">
+          <span class="score-band-label band-{{ band_css_class }}">{{ score_band }}</span>
+          <span class="score-band-desc">{{ band_description }}</span>
+          <div class="delta-display {{ 'delta-positive' if score_movement >= 0 else 'delta-negative' }}">
+            {{ '+' if score_movement >= 0 else '' }}{{ score_movement }}pp
+            <span class="delta-label">vs last week</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cover-footer">
+      <span class="cover-footer-center">
+        This report is confidential and intended solely for the named recipient organisation.
+        Distribution or reproduction requires written consent from Intuity Technologies.
+      </span>
+      <span class="cover-footer-right">intuity.ie</span>
+    </div>
+  </section>
+
+  <!-- PAGE 2 — WEEKLY SUMMARY -->
+  <section class="page" id="weekly-summary">
+    <div class="page-header-bar">
+      <h1>Weekly Summary — Week of {{ week_of_label }}</h1>
+      <div class="page-header-right">
+        <span class="page-header-tenant">{{ tenant_name }}</span>
+        <span class="page-header-date">{{ generated_iso }}</span>
+      </div>
+    </div>
+    <div class="page-inner">
+
+      <!-- Section 1: Score Snapshot -->
+      <div class="section-title">Score Snapshot</div>
+      <div class="metric-strip">
+        <div class="metric-card">
+          <span class="metric-label">Current Score</span>
+          <span class="metric-value">{{ score_current_pct }}%</span>
+          <span class="metric-sub">{{ current_score_pts }} / {{ max_score_pts }} pts</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Last Week</span>
+          <span class="metric-value">{{ score_last_pct }}%</span>
+          <span class="metric-sub">previous snapshot</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Week Movement</span>
+          <span class="metric-value {{ 'positive' if score_movement >= 0 else 'negative' }}">
+            {{ '+' if score_movement >= 0 else '' }}{{ score_movement }}pp
+          </span>
+          <span class="metric-sub">percentage points</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">vs All Tenants</span>
+          <span class="metric-value">
+            {% if avg_score_all_tenants is not none %}
+              {{ avg_score_all_tenants }}%
+            {% else %}
+              N/A
+            {% endif %}
+          </span>
+          <span class="metric-sub">Microsoft benchmark avg</span>
+        </div>
+      </div>
+
+      <!-- Section 2: Regression Alert -->
+      <div class="section-title">Weekly Assessment</div>
+      {% if regression_mode %}
+      <div class="alert-callout regression">
+        <div class="alert-callout-title">Score Regression This Week</div>
+        <div class="alert-callout-text">
+          The Secure Score dropped by <strong>{{ score_movement }}pp</strong> this week
+          ({{ score_last_pct }}% &#8594; {{ score_current_pct }}%).
+          Review recently changed or expired controls in the
+          <a href="https://security.microsoft.com/securescore" style="color: var(--fail-text);">Microsoft 365 Security Centre</a>
+          to identify the source of the regression and restore affected controls.
+        </div>
+      </div>
+      {% else %}
+      <div class="alert-callout stable">
+        <div class="alert-callout-title">Score Stable / Improving</div>
+        <div class="alert-callout-text">
+          The Secure Score
+          {% if score_movement > 0 %}
+            increased by <strong>+{{ score_movement }}pp</strong> this week
+            ({{ score_last_pct }}% &#8594; {{ score_current_pct }}%).
+            Continue progressing the open controls listed below to maintain momentum.
+          {% else %}
+            held steady at <strong>{{ score_current_pct }}%</strong> this week.
+            No regression was detected. Continue working through the open controls below.
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Section 3: Top 3 Controls to Action -->
+      <div class="section-title">Top 3 Controls to Action</div>
+      {% if controls %}
+      <div class="control-cards">
+        {% for ctrl in controls %}
+        <div class="control-card">
+          <div class="control-card-header">
+            <span class="control-rank">{{ ctrl.rank if ctrl.rank else loop.index }}.</span>
+            <span class="control-title">{{ ctrl.title }}</span>
+            <div class="control-badges">
+              <span class="badge badge-{{ ctrl.severity_css }}">{{ ctrl.severity_label }}</span>
+              <span class="badge-category">{{ ctrl.controlCategory }}</span>
+            </div>
+          </div>
+          <div class="control-card-body">
+            <div>
+              <div class="control-block-title">Points Available</div>
+              <div class="control-block-text" style="font-size: 11pt; font-weight: 700; color: var(--hero-bg);">{{ ctrl.maxScore | int }}</div>
+            </div>
+            <div>
+              <div class="control-block-title">Action</div>
+              <div class="control-block-text">{{ ctrl.remediation if ctrl.remediation else 'See Microsoft documentation.' }}</div>
+            </div>
+            <div>
+              <div class="control-block-title">Portal Link</div>
+              <div class="control-block-text">
+                {% if ctrl.actionUrl %}
+                <a href="{{ ctrl.actionUrl }}" style="color: var(--cta);">Open in Microsoft portal &#8594;</a>
+                {% else %}
+                Review in Microsoft 365 Security Centre.
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="no-controls-note">
+        No control profile data was provided for this report.
+        Review open improvement actions directly in the
+        <a href="https://security.microsoft.com/securescore" style="color: var(--cta);">Microsoft 365 Security Centre</a>
+        to identify the highest-priority controls to action this week.
+      </div>
+      {% endif %}
+
+    </div>
+    <div class="page-footer">
+      <span class="page-footer-left">
+        Intuity Technologies &#8212; Microsoft Secure Score Weekly Update &#8212; {{ tenant_name }}
+      </span>
+      <span class="page-footer-right">CONFIDENTIAL &#183; Page 2</span>
+    </div>
+  </section>
+
+</body>
+</html>
