@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Secure Score Digest — {{ tenant_name }}</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Lato:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+  :root {
+    --hero-bg:#1b4d62; --cta:#3abfcf; --brand-pink:#e4007c;
+    --white:#fff; --light-grey:#f2f4f5; --border:#e5e7eb;
+    --text-primary:#2d2d2d; --text-muted:#6b7280;
+    --good:#15803d; --warn:#f59e0b; --bad:#dc2626;
+    --font-heading:"Poppins",Arial,sans-serif;
+    --font-body:"Lato",Arial,sans-serif;
+    --font-mono:"JetBrains Mono",Consolas,monospace;
+    --gutter:14mm;
+  }
+  @page { size:A4; margin:0; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
+  html,body { font-family:var(--font-body); color:var(--text-primary); background:#fff; font-size:10pt; line-height:1.5; }
+  .page { width:210mm; min-height:297mm; position:relative; overflow:hidden; background:#fff; }
+
+  /* Header strip */
+  .header { background:var(--hero-bg); padding:9mm var(--gutter) 7mm; color:#fff; }
+  .header-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6mm; }
+  .wordmark { font-family:var(--font-heading); font-weight:700; font-size:18pt; color:var(--brand-pink); }
+  .wordmark span { font-weight:600; font-size:8pt; color:rgba(255,255,255,0.7); letter-spacing:3px; text-transform:uppercase; margin-left:4px; }
+  .header-meta { font-family:var(--font-mono); font-size:7.5pt; color:rgba(255,255,255,0.6); letter-spacing:0.5px; }
+  .eyebrow { font-size:8pt; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--cta); margin-bottom:3mm; }
+  .doctitle { font-family:var(--font-heading); font-weight:700; font-size:22pt; color:#fff; line-height:1.1; margin-bottom:2mm; }
+  .docsubtitle { font-size:11pt; color:rgba(255,255,255,0.7); }
+
+  /* Hero score block */
+  .hero { background:var(--hero-bg); color:#fff; padding:0 var(--gutter) 9mm; display:flex; align-items:flex-end; gap:14mm; border-bottom:3px solid var(--cta); }
+  .hero-score-num { font-family:var(--font-heading); font-weight:700; font-size:54pt; line-height:1; color:#fff; }
+  .hero-score-pct { font-size:22pt; color:rgba(255,255,255,0.5); margin-left:2px; }
+  .hero-score-sub { font-size:9pt; color:rgba(255,255,255,0.55); margin-top:2mm; }
+  .hero-right { flex:1; }
+  .hero-band { font-family:var(--font-heading); font-weight:600; font-size:15pt; margin-bottom:2mm; }
+  .hero-delta { font-size:12pt; font-weight:600; margin-bottom:2mm; }
+  .hero-comp { font-size:9pt; color:rgba(255,255,255,0.6); }
+  .band-resilient { color:#22c55e; }  .band-near { color:#f59e0b; }
+  .band-gaps { color:#ef4444; }       .band-critical { color:#fca5a5; }
+  .delta-up { color:#22c55e; }  .delta-down { color:#ef4444; }  .delta-flat { color:#f59e0b; }
+
+  /* KPI strip */
+  .body { padding:8mm var(--gutter); }
+  .kpi-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:3mm; margin-bottom:7mm; }
+  .kpi { border:1px solid var(--border); border-radius:5px; padding:4mm 4mm; }
+  .kpi-label { font-size:7pt; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:2mm; }
+  .kpi-value { font-family:var(--font-heading); font-weight:700; font-size:18pt; color:var(--hero-bg); line-height:1; display:block; }
+  .kpi-value.good { color:var(--good); } .kpi-value.warn { color:var(--warn); } .kpi-value.bad { color:var(--bad); }
+  .kpi-sub { font-size:7.5pt; color:var(--text-muted); margin-top:1.5mm; display:block; }
+
+  /* Section */
+  .section-title { font-family:var(--font-heading); font-weight:700; font-size:11pt; color:var(--hero-bg); margin-bottom:3mm; padding-bottom:1.5mm; border-bottom:2px solid var(--cta); }
+
+  /* Chart */
+  .chart-block { margin-bottom:7mm; }
+  .chart-svg { width:100%; height:auto; display:block; margin-bottom:2mm; }
+  .chart-caption { font-size:8pt; color:var(--text-muted); font-style:italic; }
+
+  /* Changes table */
+  .changes-block { margin-bottom:6mm; }
+  table { width:100%; border-collapse:collapse; font-size:9pt; }
+  thead tr { background:var(--hero-bg); color:#fff; }
+  thead th { font-family:var(--font-heading); font-weight:600; font-size:7.5pt; text-transform:uppercase; letter-spacing:0.5px; padding:2.5mm 3mm; text-align:left; }
+  tbody tr { border-bottom:1px solid var(--border); }
+  tbody tr:nth-child(even) { background:var(--light-grey); }
+  tbody td { padding:2.2mm 3mm; vertical-align:top; }
+  .pill { display:inline-block; padding:1px 8px; border-radius:20px; font-size:7.5pt; font-weight:700; }
+  .pill-up { background:#dcfce7; color:var(--good); border:1px solid #86efac; }
+  .pill-down { background:#fee2e2; color:var(--bad); border:1px solid #fca5a5; }
+
+  /* Band callout */
+  .callout { background:var(--light-grey); border-left:4px solid var(--cta); border-radius:0 4px 4px 0; padding:4mm 5mm; }
+  .callout-title { font-family:var(--font-heading); font-weight:600; font-size:9pt; color:var(--hero-bg); margin-bottom:1.5mm; }
+  .callout-text { font-size:9pt; line-height:1.55; }
+
+  /* Footer */
+  .footer { position:absolute; bottom:0; left:0; right:0; padding:4mm var(--gutter); border-top:1px solid var(--border); display:flex; justify-content:space-between; font-size:7.5pt; color:var(--text-muted); background:#fff; }
+  .footer-mono { font-family:var(--font-mono); font-size:7pt; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <span class="wordmark">Calvindd2f</span>
+      <span class="header-meta">Confidential · Tenant {{ tenant_id }} · {{ generated_at }}</span>
+    </div>
+    <div class="eyebrow">Weekly Secure Score Digest</div>
+    <div class="doctitle">{{ tenant_name }}</div>
+    <div class="docsubtitle">Week ending {{ period_end }} · {{ data_points }} data points</div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div>
+      <div class="hero-score-num">{{ score_end_pct }}<span class="hero-score-pct">%</span></div>
+      <div class="hero-score-sub">{{ current_score_pts|int }} / {{ max_score_pts|int }} points</div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-band band-{{ band_slug }}">{{ band_label }}</div>
+      <div class="hero-delta delta-{{ delta_direction }}">{{ delta_arrow }} {{ score_movement_sign }}{{ score_movement }} pp vs. last week</div>
+      <div class="hero-comp">
+        Similar seat-count peers: {{ avg_score_similar_seats|round(1) }}% ({{ peer_delta_sign }}{{ peer_delta }} pp {{ peer_direction }})
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- KPI strip -->
+    <div class="kpi-strip">
+      <div class="kpi">
+        <span class="kpi-label">7-Day Movement</span>
+        <span class="kpi-value {{ delta_class }}">{{ score_movement_sign }}{{ score_movement }}</span>
+        <span class="kpi-sub">percentage points</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Best in Window</span>
+        <span class="kpi-value">{{ best_score }}%</span>
+        <span class="kpi-sub">{{ best_day_label }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Worst in Window</span>
+        <span class="kpi-value">{{ worst_score }}%</span>
+        <span class="kpi-sub">lowest reading</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Significant Events</span>
+        <span class="kpi-value">{{ significant_events }}</span>
+        <span class="kpi-sub">changes &gt; threshold</span>
+      </div>
+    </div>
+
+    <!-- Trend chart -->
+    <div class="chart-block">
+      <h2 class="section-title">7-Day Trend</h2>
+      <svg class="chart-svg" viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg" aria-label="{{ trend_chart.aria_label }}">
+        {% for y in trend_chart.y_grid %}
+        <line x1="60" y1="{{ y }}" x2="730" y2="{{ y }}" stroke="#e5e7eb" stroke-width="0.5"/>
+        {% endfor %}
+        {% for lbl in trend_chart.y_labels %}
+        <text x="{{ lbl.x }}" y="{{ lbl.y }}" text-anchor="end" font-size="8" fill="#6b7280" font-family="JetBrains Mono, monospace">{{ lbl.text }}</text>
+        {% endfor %}
+        <path d="{{ trend_chart.area_path }}" fill="#3abfcf" fill-opacity="0.12"/>
+        <path d="{{ trend_chart.score_path }}" fill="none" stroke="#1b4d62" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="{{ trend_chart.trend_x0 }}" y1="{{ trend_chart.trend_y0 }}" x2="{{ trend_chart.trend_x1 }}" y2="{{ trend_chart.trend_y1 }}" stroke="#e4007c" stroke-width="1.2" stroke-dasharray="4,3" opacity="0.7"/>
+        <circle cx="{{ trend_chart.start_cx }}" cy="{{ trend_chart.start_cy }}" r="3.5" fill="#1b4d62"/>
+        <circle cx="{{ trend_chart.end_cx }}" cy="{{ trend_chart.end_cy }}" r="4" fill="#3abfcf" stroke="#fff" stroke-width="1.5"/>
+        {% for lbl in trend_chart.x_labels %}
+        <text x="{{ lbl.x }}" y="218" text-anchor="middle" font-size="8" fill="#6b7280" font-family="JetBrains Mono, monospace">{{ lbl.text }}</text>
+        {% endfor %}
+      </svg>
+      <p class="chart-caption">{{ trend_chart.caption }}</p>
+    </div>
+
+    <!-- Notable changes -->
+    {% if notable_changes %}
+    <div class="changes-block">
+      <h2 class="section-title">Notable Changes This Week</h2>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:22mm;">Day</th>
+            <th style="width:24mm;">Movement</th>
+            <th>Likely Driver</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for change in notable_changes %}
+          <tr>
+            <td><strong>{{ change.date }}</strong></td>
+            <td><span class="pill pill-{{ change.direction }}">{{ change.delta }}</span></td>
+            <td>{{ change.driver }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- Band callout -->
+    <div class="callout">
+      <div class="callout-title">What this means</div>
+      <div class="callout-text">{{ band_description }}</div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>Calvindd2f · github.com/Calvindd2f · Generated {{ generated_at }}</span>
+    <span class="footer-mono">SecureScore-Digest · {{ tenant_id }}</span>
+  </div>
+
+</div>
+
+</body>
+</html>

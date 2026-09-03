@@ -1,0 +1,8 @@
+azure-functions
+numpy
+scipy
+scikit-learn
+playwright
+requests
+beautifulsoup4
+jinja2

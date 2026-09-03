@@ -1,0 +1,13 @@
+.git
+.gitignore
+.vscode
+.funcignore
+venv/
+.venv/
+local.settings.json
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+Dockerfile
+.dockerignore

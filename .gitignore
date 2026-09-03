@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Azure Functions
+local.settings.json
+.python_packages/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets / config
+config.json
+.env
+
+# CI
+.github/workflows/jobs:.yaml
+
+# Large test fixtures
+local_test.json
