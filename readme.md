@@ -109,12 +109,12 @@ docker push ${ACR_LOGIN}/func-secure-score:latest
 
 ### Images of Report Template
 
-![Secure Score Report](docs\images\quarterly_template_snippet.png)
-![Secure Score Report](docs\images\quarterly_template_details4.png)
-![Secure Score Report](docs\images\quarterly_template_details5.png)
-![Secure Score Report](docs\images\quarterly_template_details2.png)
+![Secure Score Report](docs/images/quarterly_template_snippet.png)
+![Secure Score Report](docs/images/quarterly_template_details4.png)
+![Secure Score Report](docs/images/quarterly_template_details5.png)
+![Secure Score Report](docs/images/quarterly_template_details2.png)
 
-![Secure Score Report](docs\images\weekly.png)
+![Secure Score Report](docs/images/weekly.png)
 
 ---
 
